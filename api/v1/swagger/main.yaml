@@ -1,0 +1,378 @@
+swagger: "2.0"
+info:
+  description: ui for playing with the janitor REST api
+  version: "1.0.0"
+  title: janitor REST api
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+
+basePath: "/api/v1"
+
+# Paths supported by the server application
+paths:
+  /circuits:
+    get:
+      operationId: "api.v1.circuits.read_all"
+      tags:
+        - "Circuits"
+      summary: "get all circuits"
+      description: "GET all circuits"
+      responses:
+        200:
+          description: "Successful read circuits list operation"
+          schema:
+            type: "array"
+            items:
+              properties:
+                id:
+                  type: "integer"
+                provider_cid:
+                  type: "string"
+                a_side:
+                  type: "string"
+                z_side:
+                  type: "string"
+                provider_id:
+                  type: "integer"
+    post:
+      operationId: 'api.v1.circuits.create'
+      produces:
+        - "application/json"
+      tags:
+        - Circuits
+      summary: Create a circuit
+      description: Create a new circuit
+      parameters:
+        - name: circuit
+          in: body
+          description: circuit to create
+          required: True
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: Id of the circuit
+              provider_cid:
+                type: string
+                description: provider circuit id
+              a_side:
+                type: string
+                description: '"a" side of the circuit'
+              z_side:
+                type: string
+                description: '"z" side of the circuit'
+              provider_id:
+                type: integer
+                description: provider id
+      responses:
+        201:
+          description: Successfully created circuit
+          schema:
+            properties:
+              id:
+                type: integer
+                description: Id of the circuit
+              provider_cid:
+                type: string
+                description: Id of the circuit
+              a_side:
+                type: string
+                description: '"a" side of the circuit'
+              z_side:
+                type: string
+                description: '"z" side of the circuit'
+              provider_id:
+                type: integer
+                description: provider id
+  /circuits/{circuit_id}:
+    get:
+      operationId: 'api.v1.circuits.read_one'
+      tags:
+        - "Circuits"
+      summary: "get a single circuit by the id"
+      description: "GET a circuit"
+      parameters:
+        - name: circuit_id
+          in: path
+          description: Id of the circuit to get
+          type: integer
+          required: True
+      responses:
+        200:
+          description: Successfully read circuit from circuits
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: Id of the circuit
+              provider_cid:
+                type: string
+                description: circuit id given from the provider
+              a_side:
+                type: string
+                description: 'The "a" side of the circuit'
+              z_side:
+                type: string
+                description: 'The "z" side of the circuit'
+              provider_id:
+                type: integer
+                description: the provider id
+              maintenances:
+                type: array
+                items:
+                  properties:
+                    circuit_id:
+                      type: integer
+                      description: Id of this circuit
+                    maint_id:
+                      type: integer
+                      description: Id of the maintenance
+                    impact:
+                      type: string
+                      description: content of this note
+                    date:
+                      type: string
+                      description: the date of the maintenance
+    put:
+      operationId: 'api.v1.circuits.update'
+      tags:
+        - "Circuits"
+      summary: Update a circuit
+      description: Update a circuit
+      parameters:
+        - name: circuit_id
+          in: path
+          description: Id the circuit to update
+          type: integer
+          required: True
+        - name: circuit
+          in: body
+          schema:
+            type: object
+            properties:
+              provider_cid:
+                type: string
+                description: circuit id as given by the provider
+              a_side:
+                type: string
+                description: the a side of the circuit if applicable
+              z_side:
+                type: string
+                description: the z side of the circuit if applicable
+              provider_id:
+                type: integer
+                description: the provider id
+      responses:
+        200:
+          description: Successfully updated circuit
+          schema:
+            properties:
+              circuit_id:
+                type: integer
+                description: Id of the circuit in the database
+              a_side:
+                type: string
+                description: a_side of the circuit
+              z_side:
+                type: string
+                description: z_side of the circuit
+              provider_id:
+                type: integer
+                description: provider id in the database
+  /providers:
+    get:
+      operationId: "api.v1.providers.read_all"
+      tags:
+        - "Providers"
+      summary: "Get all providers or a specific provider"
+      description: "GET all providers"
+      responses:
+        200:
+          description: "Successful read providers list operation"
+          schema:
+            type: "array"
+            items:
+              properties:
+                id:
+                  type: "integer"
+                name:
+                  type: "string"
+                type:
+                  type: "string"
+                email_esc:
+                  type: "string"
+                circuits:
+                  type: array
+                  items:
+                    properties:
+                      id:
+                        type: integer
+                        description: Id of this circuit
+                      provider_cid:
+                        type: string
+                        description: circuit id as given by the provider
+                      a_side:
+                        type: string
+                        description: 'The "a" side of the circuit'
+                      z_side:
+                        type: string
+                        description: 'The "z" side of the circuit'
+  /providers/{provider_id}:
+    get:
+      operationId: 'api.v1.providers.read_one'
+      tags:
+        - "Providers"
+      summary: "get a single provider by the id"
+      description: "GET a provider"
+      parameters:
+        - name: provider_id
+          in: path
+          description: Id of the provider to get
+          type: integer
+          required: True
+      responses:
+        200:
+          description: Successfully read provider from providers
+          schema:
+            type: object
+            properties:
+              id:
+                type: "integer"
+              name:
+                type: "string"
+              type:
+                type: "string"
+              email_esc:
+                type: "string"
+              circuits:
+                type: array
+                items:
+                  properties:
+                    id:
+                      type: integer
+                      description: Id of this circuit
+                    provider_cid:
+                      type: string
+                      description: circuit id as given by the provider
+                    a_side:
+                      type: string
+                      description: 'The "a" side of the circuit'
+                    z_side:
+                      type: string
+                      description: 'The "z" side of the circuit'
+  /maintenances:
+    get:
+      operationId: "api.v1.maintenances.read_all"
+      tags:
+        - "Maintenances"
+      summary: "Get all maintenances or a specific maintenance"
+      description: "GET all maintenances"
+      responses:
+        200:
+          description: "Successful read maint list operation"
+          schema:
+            type: "array"
+            items:
+              properties:
+                id:
+                  type: "integer"
+                provider_maintenance_id:
+                  type: "string"
+                start:
+                  type: "string"
+                end:
+                  type: "string"
+                timezone:
+                  type: "string"
+                cancelled:
+                  type: "boolean"
+                rescheduled:
+                  type: "boolean"
+                rescheduled_id:
+                  type: "integer"
+                location:
+                  type: "string"
+                reason:
+                  type: "string"
+                received_dt:
+                  type: "string"
+                started:
+                  type: "boolean"
+                ended:
+                  type: "boolean"
+                circuits:
+                  type: array
+                  items:
+                    properties:
+                      circuit_id:
+                        type: integer
+                        description: Id of the circuit
+                      impact:
+                        type: string
+                        description: impact of the maintenace for this circuit
+                      date:
+                        type: string
+                        description: date of maintenance
+  /maintenances/{maintenance_id}:
+    get:
+      operationId: 'api.v1.maintenances.read_one'
+      tags:
+        - "Maintenances"
+      summary: "get a single maintenance by the id"
+      description: "GET a maintenance"
+      parameters:
+        - name: maintenance_id
+          in: path
+          description: id of the maintenance to get
+          type: integer
+          required: True
+      responses:
+        200:
+          description: "Successful read maint list operation"
+          schema:
+            type: "array"
+            items:
+              properties:
+                id:
+                  type: "integer"
+                provider_maintenance_id:
+                  type: "string"
+                start:
+                  type: "string"
+                end:
+                  type: "string"
+                timezone:
+                  type: "string"
+                cancelled:
+                  type: "boolean"
+                rescheduled:
+                  type: "boolean"
+                rescheduled_id:
+                  type: "integer"
+                location:
+                  type: "string"
+                reason:
+                  type: "string"
+                received_dt:
+                  type: "string"
+                started:
+                  type: "boolean"
+                ended:
+                  type: "boolean"
+                circuits:
+                  type: array
+                  items:
+                    properties:
+                      circuit_id:
+                        type: integer
+                        description: Id of the circuit
+                      impact:
+                        type: string
+                        description: impact of the maintenace for this circuit
+                      date:
+                        type: string
+                        description: date of maintenance

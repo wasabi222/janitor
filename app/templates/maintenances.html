@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<table class="table table-hover" id="maintenances">
+		<tr>
+				<th>date(s)</th>
+				<th>provider maintenance ID</th>
+				<th>start</th>
+				<th>end</th>
+				<th>timezone</th>
+				<th>location</th>
+        </tr>
+    {% for maint in maintenances %}
+	<tr id="{{ maint.id }}">
+			<td>{% for circuit in maint.circuits %}
+					{{ circuit.date }}<br />
+					{% endfor %}</td>
+			<td><a href="{{ url_for('main.maintenance_detail', maintenance_id=maint.id)  }}">{{ maint.provider_maintenance_id }}</a></td>
+			<td>{{ maint.start }}</td>
+			<td>{{ maint.end }}</td>
+			<td>{{ maint.timezone }}</td>
+			<td>{{ maint.location }}</td>
+	</tr>
+	{% endfor %}
+</ul>
+</table>
+<nav aria-label="...">
+        <ul class="pager">
+            <li class="previous{% if not prev_url %} disabled{% endif %}">
+                <a href="{{ prev_url or '#' }}">
+                    <span aria-hidden="true">&larr;</span> previous
+                </a>
+            </li>
+            <li class="next{% if not next_url %} disabled{% endif %}">
+                <a href="{{ next_url or '#' }}">
+                    next <span aria-hidden="true">&rarr;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+	{% endblock %}

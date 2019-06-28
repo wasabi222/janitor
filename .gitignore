@@ -1,0 +1,8 @@
+.env
+.coverage
+*.log
+__pycache__/
+venv/
+htmlcov/
+migrations/
+app.db

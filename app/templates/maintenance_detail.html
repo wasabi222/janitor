@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<h1>{{ maintenance.provider_maintenance_id }}</h1>
+<h2>start: {{ maintenance.start }}</h2>
+<h2>end: {{ maintenance.end }}</h2>
+<h2>timezone: {{ maintenance.timezone }}</h2>
+{% if maintenance.rescheduled %}
+<h1>THIS MAINTENANCE HAS BEEN RESCHEDULED! NEW MAINTENANCE <a href="{{ url_for('main.maintenance_detail', maintenance_id=maintenance.rescheduled_id) }}">HERE</a></h1>
+{% endif %}
+<p>{{ maintenance.reason }}
+</p>
+{%- if updates %}
+<h2>updates</h2>
+{%- for update in updates %}
+<h4>{{ update.updated }}</h4>
+<p>{{ update.comment }}</p>
+{%- endfor %}
+{% endif %}
+<table class="table table-hover" id="maintenances">
+		<tr>
+				<th>circuit</th>
+				<th>a side</th>
+				<th>z side</th>
+				<th>impact</th>
+				<th>date</th>
+        </tr>
+    {% for circuit in circuits %}
+	<tr id="{{ circuit.circuit.provider_id }}">
+			<td><a href="{{ url_for('main.circuit_detail', circuit_id=circuit.circuit.id) }}">{{ circuit.circuit.provider_cid }}</a></td>
+				<td>{{ circuit.circuit.a_side }}</td>
+				<td>{{ circuit.circuit.z_side }}</td>
+				<td>{{ circuit.impact }}</td>
+				<td>{{ circuit.date }}</td>
+        </tr>
+	{% endfor %}
+</table>
+<nav aria-label="...">
+        <ul class="pager">
+            <li class="previous{% if not prev_url %} disabled{% endif %}">
+                <a href="{{ prev_url or '#' }}">
+                    <span aria-hidden="true">&larr;</span> previous
+                </a>
+            </li>
+            <li class="next{% if not next_url %} disabled{% endif %}">
+                <a href="{{ next_url or '#' }}">
+                    next <span aria-hidden="true">&rarr;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+{% endblock %}

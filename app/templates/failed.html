@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<p>you can retrieve a list of email subjects that were unable to be processed. This may take a few moments as the subjects are retrieved from the server.</p>
+<button class="btn btn-primary" id="getFailed">retrieve failed messages</button>
+<table class="table table-hover" id="failed-messages">
+</table>
+
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+
+<script>
+
+$(document).ready(function(){
+    $('#getFailed').click(function(){
+			$(this).prop('disabled', true);
+			$(this).html('<img src="{{ url_for('static', filename='loading.gif') }}">');
+            $.get( "/failedmessages", function( data ) {
+                for (i = 0; i < data.length; i++) { 
+                        $( "#failed-messages" ).append( '<tr><td>' + data[i] + '</td></tr>' );
+                }
+                
+            }).success(function() {
+                    $('#getFailed').text('done');
+            });
+            
+    });
+});
+
+</script>
+{% endblock %}

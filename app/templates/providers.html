@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<table class="table table-hover" id="providers">
+		<tr>
+				<th>provider</th>
+				<th>type</th>
+				<th>email escalation</th>
+        </tr>
+    {% for provider in providers %}
+	<tr id="{{ provider.id }}">
+			<td><a href="{{ url_for('main.provider_detail', provider_id=provider.id) }}">{{ provider.name }}</a></td>
+			<td>{{ provider.type }}</td>
+			<td>{{ provider.email_esc }}</td>
+	{% endfor %}
+</table>
+<nav aria-label="...">
+        <ul class="pager">
+            <li class="previous{% if not prev_url %} disabled{% endif %}">
+                <a href="{{ prev_url or '#' }}">
+                    <span aria-hidden="true">&larr;</span> previous
+                </a>
+            </li>
+            <li class="next{% if not next_url %} disabled{% endif %}">
+                <a href="{{ next_url or '#' }}">
+                    next <span aria-hidden="true">&rarr;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+{% endblock %}

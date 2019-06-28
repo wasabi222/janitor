@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+{% if next_run %}
+<p>next email process run {{ moment(next_run).fromNow() }}</p>
+{% endif %}
+<form method="post">
+<button class="btn btn-primary" type="submit">process messages</button>
+</form>
+<h1>recent maintenances</h1>
+<table class="table table-hover" id="recent-maintenances">
+		<tr>
+				<th>date</th>
+				<th>provider maintenance id</th>
+				<th>impact</th>
+		</tr>
+				{% for maint in recent %}
+		<tr>
+				<td>{{ maint.date }}</td>
+				<td><a href="{{ url_for('main.maintenance_detail', maintenance_id=maint.maint_id) }}">{{ maint.maintenance.provider_maintenance_id }}</a></td>
+				<td>{{ maint.impact }}</td>
+		</tr>
+				{% endfor %}
+</table>
+
+<h1>upcoming maintenances</h1>
+<table class="table table-hover" id="upcoming-maintenances">
+		<tr>
+				<th>date</th>
+				<th>provider maintenance id</th>
+				<th>impact</th>
+		</tr>
+				{% for maint in upcoming %}
+		<tr>
+				<td>{{ maint.date }}</td>
+				<td><a href="{{ url_for('main.maintenance_detail', maintenance_id=maint.maint_id) }}">{{ maint.maintenance.provider_maintenance_id }}</a></td>
+				<td>{{ maint.impact }}</td>
+		</tr>
+				{% endfor %}
+</table>
+
+<nav aria-label="...">
+        <ul class="pager">
+            <li class="previous{% if not prev_url %} disabled{% endif %}">
+                <a href="{{ prev_url or '#' }}">
+                    <span aria-hidden="true">&larr;</span> previous
+                </a>
+            </li>
+            <li class="next{% if not next_url %} disabled{% endif %}">
+                <a href="{{ next_url or '#' }}">
+                    next <span aria-hidden="true">&rarr;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+	{% endblock %}

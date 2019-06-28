@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+{% for error in  wtf.form_errors(form) %}
+{{ error }}
+{% endfor %}
+<h1>{{ circuit.provider_cid }}</h1>
+<h2>total maintenances on this circuit: {{ circuit.maintenances | length }}</h2>
+<table class="table table-hover" id="maintenances">
+		<tr>
+				<th>provider</th>
+				<th>a side</th>
+				<th>z side</th>
+        </tr>
+		<tr>
+				<td>{{ circuit.provider.name }}</td>
+				<td>{{ circuit.a_side }}</td>
+				<td>{{ circuit.z_side }}</td>
+        </tr>
+</table>
+{% if circuit.contract_filename %}
+<h3><a href="{{ url_for('static', filename='circuits/' ~ circuit.contract_filename) }}">view contract</a></h3>
+{% endif %}
+
+<button class="btn btn-primary" data-toggle="modal" data-target="#addModal" id="add_circuit">edit circuit</button>
+<hr />
+
+<table class="table table-hover" id="maintenances">
+		<tr>
+				<th>provider maintenance id</th>
+				<th>impact</th>
+				<th>date</th>
+        </tr>
+    {% for maint in maints%}
+	<tr id="{{ maint.maintenance.id }}">
+			<td><a href="{{ url_for('main.maintenance_detail', maintenance_id=maint.maintenance.id) }}">{{ maint.maintenance.provider_maintenance_id }}</a></td>
+				<td>{{ maint.impact }}</td>
+				<td>{{ maint.date }}</td>
+        </tr>
+	{% endfor %}
+</table>
+<nav aria-label="...">
+        <ul class="pager">
+            <li class="previous{% if not prev_url %} disabled{% endif %}">
+                <a href="{{ prev_url or '#' }}">
+                    <span aria-hidden="true">&larr;</span> previous
+                </a>
+            </li>
+            <li class="next{% if not next_url %} disabled{% endif %}">
+                <a href="{{ next_url or '#' }}">
+                    next <span aria-hidden="true">&rarr;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+
+
+<!-- Add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">add circuit</h4>
+      </div>
+      <div class="modal-body">
+			  {{ wtf.quick_form(form, enctype="multipart/form-data") }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal" id="close">Close</button>
+      </div>
+    </div>
+  </div>
+</div><!-- end Modal -->
+
+{% endblock %}
