@@ -38,7 +38,7 @@ Your application's secret key. This is required.
 Maximum size for circuit contract file uploads. default: 32 Mib
 
 ### LOGFILE
-Location of the file that logs are written to.
+Location of the file that logs are written to. default: /var/log/janitor.log
 
 ### CHECK_INTERVAL
 How frequently the mail server is checked for new messages. default: 10 minutes
