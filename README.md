@@ -5,7 +5,7 @@ Janitor is a flask application for parsing provider maintenance notification ema
 
 
 # Overview
-Janitor connects to an email server on a user-specified interval and checks for any maintenance emails from a list of providers and adds them to the database. It can then be configured to take an action based on the type of email: new, update, cancel, reschedule, started, and ended. For instance, you can post updates to slack on maintenance start/end emails, add events to your calendar for new emails, remove events from your calendar for cancelled emails, etc.
+Janitor connects to an email server on a user-specified interval and checks for any maintenance emails from a list of providers and adds them to the database. It can then be configured to take an action based on the type of email: new, update, cancel, reschedule, started, and ended. For instance, you can post updates to slack on maintenance start/end emails, add events to your calendar for new emails, remove events from your calendar for cancelled emails, etc. By default, start/end messages post to slack. You can perform custom actions on maintenance start/end emails by adding functions to `app/jobs/started.py` and `app/jobs/ended.py`.
 
 # Demo
 ![demo](docs/demo.gif)
@@ -259,4 +259,3 @@ eg:
 Get a provider by id
 eg:
 `curl -X GET --header 'Accept: application/json' 'http://127.0.0.1:5000/api/v1/providers/1'`
-
