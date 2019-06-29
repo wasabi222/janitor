@@ -47,7 +47,7 @@ def main():
                               False)
                     )
     recent = (MaintCircuit.query
-                    .filter(MaintCircuit.date < now)
+                    .filter(MaintCircuit.date <= now)
                     .filter(MaintCircuit.date > last_week)
                     .order_by(desc(MaintCircuit.date))
                     .all()
