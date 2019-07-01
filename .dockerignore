@@ -1,0 +1,6 @@
+Dockerfile
+LICENSE
+tests/
+requirements-dev.txt
+.git/
+.gitignore
