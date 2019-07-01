@@ -3,6 +3,7 @@
 *.log
 __pycache__/
 venv/
+.venv/
 htmlcov/
 migrations/
 app.db
