@@ -3,3 +3,4 @@ black
 pytest
 pytest-mock
 pytest-cov
+docker-compose

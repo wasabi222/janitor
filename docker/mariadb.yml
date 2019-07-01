@@ -1,0 +1,20 @@
+version: '2.1'
+
+services:
+  janitor:
+    extends:
+      file: janitor.yml
+      service: janitor
+    depends_on:
+      - mariadb
+    environment:
+      DATABASE_URL: mysql://janitor:janitor@mariadb/janitor
+  mariadb:
+    image: mariadb
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_DATABASE: janitor
+      MYSQL_USER: janitor
+      MYSQL_PASSWORD: janitor
+      MYSQL_ALLOW_EMPTY_PASSWORD: "True"
