@@ -1,7 +1,8 @@
 import pytest
 import json
 
-headers = {'content-type' : 'application/json'}
+headers = {'content-type': 'application/json'}
+
 
 def test_maintenance_root(client, api):
     """

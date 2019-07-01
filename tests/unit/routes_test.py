@@ -71,10 +71,7 @@ def test_circuits_page_form(client):
     WHEN the '/circuits' page is POSTed to
     THEN check the response is valid and the circuit was created
     """
-    data = {
-        'provider_cid' : 'fake cid',
-        'provider' : 1
-    }
+    data = {'provider_cid': 'fake cid', 'provider': 1}
     response = client.post('/circuits', data=data)
     assert response.status_code == 200
     assert b'<table class="table table-hover" id="circuits">' in response.data
@@ -89,8 +86,7 @@ def test_maintenances_page(client):
     """
     response = client.get('/maintenances')
     assert response.status_code == 200
-    assert b'<table class="table table-hover" id="maintenances">' in \
-        response.data
+    assert b'<table class="table table-hover" id="maintenances">' in response.data
 
 
 def test_maintenances_detail_page(client):
@@ -103,7 +99,6 @@ def test_maintenances_detail_page(client):
     assert response.status_code == 200
 
 
-
 def test_metrics_page(client):
     """
     GIVEN a Flask application
@@ -112,4 +107,3 @@ def test_metrics_page(client):
     """
     response = client.get('/metrics')
     assert response.status_code == 200
-

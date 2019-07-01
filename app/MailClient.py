@@ -9,12 +9,12 @@ class MailClient(metaclass=ABCMeta):
     '''
     all mail clients require the below methods
     '''
+
     def __init__(self, server, email, passwd, port=993):
         self.server = server
         self.email = email
         self.passwd = passwd
         self.port = port
-
 
     @abstractmethod
     def verify_mailboxes():
@@ -62,7 +62,6 @@ class Gmail(MailClient):
         super().__init__(server, email, passwd, port)
         self.session = None
 
-
     def __enter__(self):
         self.open_session()
         return self
@@ -75,13 +74,11 @@ class Gmail(MailClient):
             self.open_session()
         resps = []
         boxes = self.session.list()
-        processed_box_exists = [box.split()[-1] == b'"processed"' \
-                                for box in boxes[1]]
+        processed_box_exists = [box.split()[-1] == b'"processed"' for box in boxes[1]]
         if not any(processed_box_exists):
             typ, create_resp = self.session.create('processed')
             resps.append(create_resp)
-        failures_box_exists = [box.split()[-1] == b'"failures"' \
-                                for box in boxes[1]]
+        failures_box_exists = [box.split()[-1] == b'"failures"' for box in boxes[1]]
         if not any(failures_box_exists):
             typ, create_resp = self.session.create('failures')
             resps.append(create_resp)
@@ -103,7 +100,6 @@ class Gmail(MailClient):
             if self.session.state == 'AUTH':
                 self.session.logout()
 
-
     def mark_processed(self, msg_id):
         '''
         gmail uses labels instead of folders so instead of moving
@@ -118,7 +114,6 @@ class Gmail(MailClient):
         # if message was previously a failure, remove the tag
         self.session.store(msg_id, '-X-GM-LABELS', 'failures')
 
-
     def mark_failed(self, msg_id):
         '''
         gmail uses labels instead of folders so instead of moving
@@ -129,7 +124,6 @@ class Gmail(MailClient):
             self.open_session()
         self.session.store(msg_id, '-FLAGS', '\\Seen')
         self.session.store(msg_id, '+X-GM-LABELS', 'failures')
-
 
     def __repr__(self):
         server = f'<Gmail server: {self.server}, '

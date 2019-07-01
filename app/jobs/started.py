@@ -25,11 +25,8 @@ def post_to_slack(email, maintenance, **kwargs):
     text = f'maintenance {maintenance.provider_maintenance_id} has STARTED!\n'
     username = 'janitor'
 
-    data_dict = {'channel' : channel,
-                 'text' : text,
-                 'username' : username,
-                }
-                 #'icon_url' : icon_url}
+    data_dict = {'channel': channel, 'text': text, 'username': username}
+    #'icon_url' : icon_url}
 
     js = json.dumps(data_dict)
 
@@ -41,8 +38,4 @@ def run_traffic_drain_cmd(email, maintenance, **kwargs):
     pass
 
 
-
-FUNCS = [
-    post_to_slack,
-    run_traffic_drain_cmd,
-]
+FUNCS = [post_to_slack, run_traffic_drain_cmd]

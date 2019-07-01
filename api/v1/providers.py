@@ -15,6 +15,7 @@ def read_all():
 
     return schema.dump(providers).data
 
+
 def read_one(provider_id):
     """
     returns a single provider

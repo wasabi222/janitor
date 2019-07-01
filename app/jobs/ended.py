@@ -25,17 +25,11 @@ def post_to_slack(email, maintenance, **kwargs):
     text = f'maintenance {maintenance.provider_maintenance_id} has ENDED!\n'
     username = 'janitor'
 
-    data_dict = {
-                 'channel' : channel,
-                 'text' : text,
-                 'username' : username,
-                }
+    data_dict = {'channel': channel, 'text': text, 'username': username}
 
     js = json.dumps(data_dict)
 
     requests.post(url, data=js, headers={'Content-Type': 'application/json'})
 
 
-FUNCS = [
-    post_to_slack,
-]
+FUNCS = [post_to_slack]

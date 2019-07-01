@@ -15,15 +15,12 @@ import email
 PROVIDERS = [Zayo, NTT, PacketFabric, EUNetworks, GTT]
 
 
-
-
 def get_client():
     server = current_app.config['MAIL_SERVER']
     username = current_app.config['MAIL_USERNAME']
     passwd = current_app.config['MAIL_PASSWORD']
     client = mc(server, username, passwd)
     return client
-
 
 
 def process_provider(client, mail, provider):
@@ -85,7 +82,4 @@ def process():
             p = provider()
             process_provider(client, mail, p)
 
-
         client.close_session()
-
-

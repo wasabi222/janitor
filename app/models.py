@@ -5,9 +5,15 @@ from sqlalchemy import Enum
 from marshmallow import fields
 
 
-
-PROVIDER_TYPES = Enum('transit', 'backbone', 'transport', 'peering', 'facility',
-                      'multi', name='ProviderType')
+PROVIDER_TYPES = Enum(
+    'transit',
+    'backbone',
+    'transport',
+    'peering',
+    'facility',
+    'multi',
+    name='ProviderType',
+)
 
 
 class Provider(db.Model):
@@ -21,9 +27,6 @@ class Provider(db.Model):
         return f'<Provider {self.name} type: {self.type}>'
 
 
-
-
-
 class Circuit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     provider_cid = db.Column(db.VARCHAR(128), index=True, unique=True)
@@ -31,7 +34,6 @@ class Circuit(db.Model):
     z_side = db.Column(db.VARCHAR(128), nullable=True)
     provider_id = db.Column(db.Integer, db.ForeignKey('provider.id'))
     contract_filename = db.Column(db.String(256), default=None, nullable=True)
-
 
     def __repr__(self):
         return f'<Circuit {self.provider_cid}>'
@@ -42,6 +44,7 @@ class CircuitSchema(ma.ModelSchema):
         model = Circuit
         sqla_session = db.session
         include_fk = True
+
     maintenances = fields.Nested('CircuitMaintSchema', default=[], many=True)
 
 
@@ -60,22 +63,23 @@ class Maintenance(db.Model):
     timezone = db.Column(db.String(128), nullable=True)
     cancelled = db.Column(db.BOOLEAN, default=0)
     rescheduled = db.Column(db.BOOLEAN, default=0)
-    rescheduled_id = db.Column(db.Integer, db.ForeignKey('maintenance.id'),
-        nullable=True)
+    rescheduled_id = db.Column(
+        db.Integer, db.ForeignKey('maintenance.id'), nullable=True
+    )
     location = db.Column(db.String(2048), index=True, nullable=True)
     reason = db.Column(db.TEXT(4096), nullable=True)
     received_dt = db.Column(db.DateTime)
     started = db.Column(db.BOOLEAN, default=0)
     ended = db.Column(db.BOOLEAN, default=0)
-    updates = db.relationship('MaintUpdate', backref='maintenance',
-              lazy='dynamic')
+    updates = db.relationship('MaintUpdate', backref='maintenance', lazy='dynamic')
 
     def __repr__(self):
         return f'<Maintenance {self.provider_maintenance_id}>'
 
+
 class MaintCircuit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    maint_id =  db.Column(db.Integer, db.ForeignKey('maintenance.id'))
+    maint_id = db.Column(db.Integer, db.ForeignKey('maintenance.id'))
     circuit_id = db.Column(db.Integer, db.ForeignKey('circuit.id'))
     impact = db.Column(db.VARCHAR(128))
     date = db.Column(db.DATE)
@@ -102,8 +106,7 @@ class MaintenanceSchema(ma.ModelSchema):
         sqla_session = db.session
         include_fk = True
 
-    circuits = fields.Nested('MaintenanceCircuitSchema',
-               default=[], many=True)
+    circuits = fields.Nested('MaintenanceCircuitSchema', default=[], many=True)
 
 
 class MaintenanceCircuitSchema(ma.ModelSchema):

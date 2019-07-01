@@ -4,5 +4,4 @@ import requests
 import json
 
 
-FUNCS = [
-]
+FUNCS = []
