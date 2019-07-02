@@ -6,7 +6,8 @@ services:
       file: janitor.yml
       service: janitor
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     environment:
       DATABASE_URL: mysql://janitor:janitor@mariadb/janitor
   mariadb:
@@ -18,3 +19,7 @@ services:
       MYSQL_USER: janitor
       MYSQL_PASSWORD: janitor
       MYSQL_ALLOW_EMPTY_PASSWORD: "True"
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
