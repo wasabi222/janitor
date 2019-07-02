@@ -1,6 +1,6 @@
-VERSION := 2019.7.1
+VERSION := $(shell git describe --tags --always --dirty="-dev")
 # Update the image before publishing
-export IMAGE ?= 9c6c3997a47d
+export IMAGE ?= janitor:$(VERSION)
 
 black:
 	black --check --skip-string-normalization .
@@ -8,8 +8,11 @@ black:
 format:
 	black --skip-string-normalization .
 
+build:
+	docker build . -t $(IMAGE)
+
 down:
 	docker-compose -f docker/janitor.yml down --remove-orphans
 
-%:
+%: $(OPTS)
 	docker-compose -f docker/$@.yml up -d
