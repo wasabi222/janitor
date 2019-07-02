@@ -9,4 +9,3 @@ services:
       - '8080:80'
     volumes:
       - ./init.sh:/var/run/init.sh
-    entrypoint: /var/run/init.sh

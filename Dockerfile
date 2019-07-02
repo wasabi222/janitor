@@ -1,6 +1,8 @@
 FROM python:3.6-slim-stretch
 
 COPY ./ /opt/janitor/
+
+COPY ./docker/init.sh /var/run/init.sh
 COPY ./docker/nginx.conf /etc/nginx/sites-enabled/janitor
 COPY ./docker/supervisor.conf /etc/supervisor/conf.d/janitor.conf
 
@@ -14,4 +16,4 @@ RUN apt-get update \
 
 EXPOSE 80
 
-CMD ["sh", "-c", "/usr/bin/supervisord && /usr/sbin/nginx -g \"daemon off;\""]
+ENTRYPOINT /var/run/init.sh
