@@ -2,6 +2,12 @@ VERSION := $(shell git describe --tags --always --dirty="-dev")
 # Update the image before publishing
 export IMAGE ?= janitor:$(VERSION)
 
+ADMINER_STACK :=
+ifeq ($(ADMINER), true)
+	ADMINER_STACK += -f docker/adminer.yml
+endif
+export ADMINER_STACK
+
 black:
 	black --check --skip-string-normalization .
 
@@ -15,4 +21,4 @@ down:
 	docker-compose -f docker/janitor.yml down --remove-orphans
 
 %: $(OPTS)
-	docker-compose -f docker/$@.yml up -d
+	docker-compose -f docker/$@.yml $(ADMINER_STACK) up -d
