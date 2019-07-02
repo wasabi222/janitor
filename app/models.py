@@ -67,7 +67,7 @@ class Maintenance(db.Model):
         db.Integer, db.ForeignKey('maintenance.id'), nullable=True
     )
     location = db.Column(db.String(2048), index=True, nullable=True)
-    reason = db.Column(db.TEXT(4096), nullable=True)
+    reason = db.Column(db.TEXT(), nullable=True)
     received_dt = db.Column(db.DateTime)
     started = db.Column(db.BOOLEAN, default=0)
     ended = db.Column(db.BOOLEAN, default=0)
@@ -90,7 +90,7 @@ class MaintCircuit(db.Model):
 class MaintUpdate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     maintenance_id = db.Column(db.Integer, db.ForeignKey('maintenance.id'))
-    comment = db.Column(db.TEXT(4096))
+    comment = db.Column(db.TEXT())
     updated = db.Column(db.DateTime, default=datetime.utcnow)
 
 
