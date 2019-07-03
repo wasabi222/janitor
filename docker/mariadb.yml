@@ -9,7 +9,7 @@ services:
       mariadb:
         condition: service_healthy
     environment:
-      DATABASE_URL: mysql://janitor:janitor@mariadb/janitor
+      DATABASE_URL: mysql://janitor:janitor@localhost/janitor
   mariadb:
     image: mariadb
     ports:

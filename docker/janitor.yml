@@ -3,6 +3,7 @@ version: '2.1'
 services:
   janitor:
     image: ${IMAGE}
+    network_mode: ${NETWORK}
     env_file:
       - ./.env
     ports:

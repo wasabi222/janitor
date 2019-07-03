@@ -1,6 +1,7 @@
 VERSION := $(shell git describe --tags --always --dirty="-dev")
 # Update the image before publishing
 export IMAGE ?= janitor:$(VERSION)
+export NETWORK ?= host
 
 ADMINER_STACK :=
 ifeq ($(ADMINER), true)
