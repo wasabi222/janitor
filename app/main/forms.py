@@ -14,22 +14,23 @@ class AddCircuitForm(FlaskForm):
     a_side = StringField('a side')
     z_side = StringField('z side')
     provider = SelectField('provider', choices=choices, coerce=int)
-    circuit_contract = FileField('Circuit Contract',
-                                 validators=[
-                                 FileAllowed(documents, 'documents only!')])
+    circuit_contract = FileField(
+        'Circuit Contract',
+        validators=[FileAllowed(documents, 'documents only!')],
+    )
     submit = SubmitField('submit')
 
     def validate_provider_cid(self, pcid):
-        circuit = Circuit.query.filter_by(
-            provider_cid=pcid.data).first()
+        circuit = Circuit.query.filter_by(provider_cid=pcid.data).first()
         if circuit is not None:
-           raise ValidationError('this circuit seems to exist!')
+            raise ValidationError('this circuit seems to exist!')
 
 
 class AddCircuitContract(FlaskForm):
-    circuit_contract = FileField('Circuit Contract',
-                                 validators=[FileRequired(),
-                                 FileAllowed(documents, 'documents only!')])
+    circuit_contract = FileField(
+        'Circuit Contract',
+        validators=[FileRequired(), FileAllowed(documents, 'documents only!')],
+    )
     submit = SubmitField('submit')
 
 
@@ -38,6 +39,7 @@ class EditCircuitForm(FlaskForm):
     a_side = StringField('a side')
     z_side = StringField('z side')
     provider = SelectField('provider', choices=choices, coerce=int)
-    circuit_contract = FileField('Circuit Contract',
-                       validators=[FileAllowed(documents, 'documents only!')])
+    circuit_contract = FileField(
+        'Circuit Contract', validators=[FileAllowed(documents, 'documents only!')]
+    )
     submit = SubmitField('submit')

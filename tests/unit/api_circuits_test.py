@@ -1,7 +1,8 @@
 import pytest
 import json
 
-headers = {'content-type' : 'application/json'}
+headers = {'content-type': 'application/json'}
+
 
 def test_circuit_root(client, api):
     """
@@ -13,23 +14,18 @@ def test_circuit_root(client, api):
     assert response.status_code == 200
     assert True
 
+
 def test_circuit_add(client, api):
     """
     GIVEN a Flask client and api root
     WHEN the 'circuit' api root is posted to
     THEN check the circuit was created
     """
-    data = {
-        'a_side' : 'a',
-        'z_side' : 'z',
-        'provider_cid' : '123',
-        'provider_id' : 1,
-    }
+    data = {'a_side': 'a', 'z_side': 'z', 'provider_cid': '123', 'provider_id': 1}
     data = json.dumps(data)
     resp = client.post(f'{api}/circuits', data=data, headers=headers)
 
     assert resp.status_code == 201
-
 
 
 def test_circuit_add_bad_one(client, api):
@@ -38,12 +34,7 @@ def test_circuit_add_bad_one(client, api):
     WHEN an invalid circuit is attempted to be created with a dup cid
     THEN check the circuit was not created
     """
-    data = {
-        'a_side' : 'a',
-        'z_side' : 'z',
-        'provider_cid' : 'xxx',
-        'provider_id' : 1,
-    }
+    data = {'a_side': 'a', 'z_side': 'z', 'provider_cid': 'xxx', 'provider_id': 1}
     data = json.dumps(data)
     resp = client.post(f'{api}/circuits', data=data, headers=headers)
 
@@ -56,12 +47,7 @@ def test_circuit_add_bad_two(client, api):
     WHEN an invalid circuit is attempted to be created with an invalid provider
     THEN check the circuit was not created
     """
-    data = {
-        'a_side' : 'a',
-        'z_side' : 'z',
-        'provider_cid' : 'abc',
-        'provider_id' : 111111,
-    }
+    data = {'a_side': 'a', 'z_side': 'z', 'provider_cid': 'abc', 'provider_id': 111111}
     data = json.dumps(data)
     resp = client.post(f'{api}/circuits', data=data, headers=headers)
 

@@ -15,13 +15,11 @@ import dateutil.parser as parser
 import time
 
 from app.models import Maintenance, Circuit, MaintCircuit, MaintUpdate
-from app.models import Provider as Pro # don't conflict with the class below
+from app.models import Provider as Pro  # don't conflict with the class below
 from app import db
 
 from app.jobs.started import FUNCS as started_funcs
 from app.jobs.ended import FUNCS as ended_funcs
-
-
 
 
 class Provider(metaclass=ABCMeta):
@@ -29,6 +27,7 @@ class Provider(metaclass=ABCMeta):
     this is a provider that DOES NOT implement the MAINTNOTE standard and
     needs to have a custom class defined to parse their messages
     '''
+
     def __init__(self):
         self.name = 'Provider'
 
@@ -42,7 +41,6 @@ class Provider(metaclass=ABCMeta):
         https://gist.github.com/martinrusev/6121028
         '''
         pass
-
 
     @abstractmethod
     def process(self, email):
@@ -60,9 +58,9 @@ class StandardProvider(Provider):
     this class of provider follows the MAINTNOTE standard as defined
     here: https://github.com/jda/maintnote-std/blob/master/standard.md
     '''
+
     def __init__(self):
         super().__init__()
-
 
     def add_and_commit(self, row):
         db.session.add(row)
@@ -72,18 +70,15 @@ class StandardProvider(Provider):
     def identified_by(self):
         pass
 
-
     def add_circuit(self, cid):
         '''
         add a circuit to the db if it doesn't already exist
         '''
         circuit = Circuit()
         circuit.provider_cid = cid
-        provider = Pro.query.filter_by(name=self.name,
-                                   type=self.type).first()
+        provider = Pro.query.filter_by(name=self.name, type=self.type).first()
         circuit.provider_id = provider.id
         self.add_and_commit(circuit)
-
 
     def add_new_maint(self, email, cal):
         '''
@@ -92,8 +87,7 @@ class StandardProvider(Provider):
         cal: icalendar object
         '''
         maint = Maintenance()
-        maint.provider_maintenance_id = cal['X-MAINTNOTE-MAINTENANCE-ID'] \
-                                        .strip()
+        maint.provider_maintenance_id = cal['X-MAINTNOTE-MAINTENANCE-ID'].strip()
         maint.start = cal['DTSTART'].dt.time()
         maint.end = cal['DTEND'].dt.time()
         maint.timezone = cal['DTSTART'].dt.tzname()
@@ -122,16 +116,16 @@ class StandardProvider(Provider):
 
             circuit_row = Circuit.query.filter_by(provider_cid=cid).first()
             maint_row = Maintenance.query.filter_by(
-                provider_maintenance_id=maint.provider_maintenance_id,
-                rescheduled=0).first()
-            mc = MaintCircuit(impact=cal['X-MAINTNOTE-IMPACT'].strip(),
-                 date=cal['DTSTART'].dt.date())
+                provider_maintenance_id=maint.provider_maintenance_id, rescheduled=0
+            ).first()
+            mc = MaintCircuit(
+                impact=cal['X-MAINTNOTE-IMPACT'].strip(), date=cal['DTSTART'].dt.date()
+            )
             circuit_row.maintenances.append(mc)
             mc.maint_id = maint_row.id
             db.session.commit()
 
         return True
-
 
     def add_cancelled_maint(self, email, cal):
         '''
@@ -140,8 +134,8 @@ class StandardProvider(Provider):
         cal: icalendar object
         '''
         maint = Maintenance.query.filter_by(
-            provider_maintenance_id=cal['X-MAINTNOTE-MAINTENANCE-ID'],
-            rescheduled=0).first()
+            provider_maintenance_id=cal['X-MAINTNOTE-MAINTENANCE-ID'], rescheduled=0
+        ).first()
 
         if not maint:
             return False
@@ -160,8 +154,8 @@ class StandardProvider(Provider):
         cal: icalendar object
         '''
         maint = Maintenance.query.filter_by(
-            provider_maintenance_id=cal['X-MAINTNOTE-MAINTENANCE-ID'],
-            rescheduled=0).first()
+            provider_maintenance_id=cal['X-MAINTNOTE-MAINTENANCE-ID'], rescheduled=0
+        ).first()
 
         if not maint:
             return False
@@ -175,7 +169,6 @@ class StandardProvider(Provider):
 
         return True
 
-
     def add_end_maint(self, email, cal):
         '''
         change the maintenance ended column from 0 to 1
@@ -183,8 +176,8 @@ class StandardProvider(Provider):
         cal: icalendar object
         '''
         maint = Maintenance.query.filter_by(
-            provider_maintenance_id=cal['X-MAINTNOTE-MAINTENANCE-ID'],
-            rescheduled=0).first()
+            provider_maintenance_id=cal['X-MAINTNOTE-MAINTENANCE-ID'], rescheduled=0
+        ).first()
 
         if not maint:
             return False
@@ -198,22 +191,23 @@ class StandardProvider(Provider):
 
         return True
 
-
     def update(self, email, cal):
         maint = Maintenance.query.filter_by(
-            provider_maintenance_id=cal['X-MAINTNOTE-MAINTENANCE-ID'],
-            rescheduled=0).first()
+            provider_maintenance_id=cal['X-MAINTNOTE-MAINTENANCE-ID'], rescheduled=0
+        ).first()
 
         if not maint:
             return False
 
-        u = MaintUpdate(maintenance_id=maint.id, comment=cal['DESCRIPTION'],
-            updated=datetime.datetime.now())
+        u = MaintUpdate(
+            maintenance_id=maint.id,
+            comment=cal['DESCRIPTION'],
+            updated=datetime.datetime.now(),
+        )
 
         self.add_and_commit(u)
 
         return True
-
 
     def process(self, email):
         msg = None
@@ -243,7 +237,6 @@ class StandardProvider(Provider):
         if not info:
             return False
 
-
         if info['X-MAINTNOTE-STATUS'].lower() in ['confirmed', 'tentative']:
             result = self.add_new_maint(email, info)
 
@@ -262,11 +255,11 @@ class StandardProvider(Provider):
         return result
 
 
-
 class NTT(StandardProvider):
     '''
     Notes: NTT starts their sequence numbers at 0
     '''
+
     def __init__(self):
         super().__init__()
         self.name = 'ntt'
@@ -315,6 +308,7 @@ class Zayo(Provider):
     '''
     zayo seems to use salesforce and mostly uses templates
     '''
+
     def __init__(self):
         super().__init__()
         self.name = 'zayo'
@@ -328,14 +322,12 @@ class Zayo(Provider):
     def identified_by(self):
         return b'(FROM "MR Zayo" UNSEEN)'
 
-
     def clean_line(self, line):
         '''
         there are nasty chars mid-line that need to be stripped out
         '''
         line = line.strip()
         return line.replace('\r', '').replace('=', '').replace('\n', '')
-
 
     def format_circuit_table(self, table):
         ptable = pd.read_html(str(table))
@@ -347,12 +339,9 @@ class Zayo(Provider):
         # 'Legacy Circuit Id']
         return ptable
 
-
     def add_and_commit(self, row):
         db.session.add(row)
         db.session.commit()
-
-
 
     def get_maintenance(self, soup):
         '''
@@ -367,10 +356,10 @@ class Zayo(Provider):
 
         if maint_id:
             maint_id = Maintenance.query.filter_by(
-            provider_maintenance_id=maint_id, rescheduled=0).first()
+                provider_maintenance_id=maint_id, rescheduled=0
+            ).first()
 
         return maint_id
-
 
     def add_start_maint(self, soup, email):
         maint = self.get_maintenance(soup)
@@ -385,9 +374,7 @@ class Zayo(Provider):
         for func in started_funcs:
             func(email=email, maintenance=maint)
 
-
         return True
-
 
     def add_end_maint(self, soup, email):
         maint = self.get_maintenance(soup)
@@ -403,9 +390,7 @@ class Zayo(Provider):
         for func in ended_funcs:
             func(email=email, maintenance=maint)
 
-
         return True
-
 
     def add_cancelled_maint(self, soup, email):
         maint = self.get_maintenance(soup)
@@ -418,7 +403,6 @@ class Zayo(Provider):
         self.add_and_commit(maint)
 
         return True
-
 
     def add_reschedule_maint(self, soup, email):
         '''
@@ -438,8 +422,8 @@ class Zayo(Provider):
         self.add_new_maint(soup, email)
 
         new_maint = Maintenance.query.filter_by(
-            provider_maintenance_id=old_maint.provider_maintenance_id,
-            rescheduled=0).first()
+            provider_maintenance_id=old_maint.provider_maintenance_id, rescheduled=0
+        ).first()
 
         old_maint.rescheduled_id = new_maint.id
 
@@ -467,14 +451,12 @@ class Zayo(Provider):
                     t = datetime.date(dt.year, dt.month, dt.day)
                     dates.append(t)
                 if line.text.lower().strip().startswith('maintenance ticket'):
-                    maint.provider_maintenance_id = self.clean_line(
-                                                      line.next_sibling)
+                    maint.provider_maintenance_id = self.clean_line(line.next_sibling)
                 # elif 'urgency' in line.text.lower():
                 #    row_insert['urgency'] = self.clean_line(line.next_sibling)
 
                 elif 'location of maintenance' in line.text.lower():
-                    maint.location = self.clean_line(
-                                             line.next_sibling)
+                    maint.location = self.clean_line(line.next_sibling)
 
                 elif 'maintenance window' in line.text.lower():
                     window = line.next_sibling.strip().split('-')
@@ -508,8 +490,6 @@ class Zayo(Provider):
 
         self.add_and_commit(maint)
 
-
-
         cid_table = self.format_circuit_table(table)
         for row in cid_table.values:
             if not Circuit.query.filter_by(provider_cid=row[0]).first():
@@ -523,14 +503,14 @@ class Zayo(Provider):
                     circuit.z_side = None
                 else:
                     circuit.z_side = row[3]
-                this = Pro.query.filter_by(name=self.name,
-                                           type=self.type).first()
+                this = Pro.query.filter_by(name=self.name, type=self.type).first()
                 circuit.provider_id = this.id
                 self.add_and_commit(circuit)
 
             circuit_row = Circuit.query.filter_by(provider_cid=row[0]).first()
             maint_row = Maintenance.query.filter_by(
-                provider_maintenance_id=maint.provider_maintenance_id, rescheduled=0).first()
+                provider_maintenance_id=maint.provider_maintenance_id, rescheduled=0
+            ).first()
             for date in dates:
                 mc = MaintCircuit(impact=row[1], date=date)
                 circuit_row.maintenances.append(mc)
@@ -539,27 +519,29 @@ class Zayo(Provider):
 
         return True
 
-
     def update(self, soup, email):
         match = re.search('TTN-\d+', email['Subject'])
         if not match:
             return
 
         ticket = match.group()
-        maint = Maintenance.query.filter_by(provider_maintenance_id=ticket,
-         rescheduled=0).all()
+        maint = Maintenance.query.filter_by(
+            provider_maintenance_id=ticket, rescheduled=0
+        ).all()
 
         if maint:
             assert len(maint) == 1, 'More than one maint returned!'
             maint = maint[0]
 
-            u = MaintUpdate(maintenance_id=maint.id, comment=soup.text,
-            updated=datetime.datetime.now())
+            u = MaintUpdate(
+                maintenance_id=maint.id,
+                comment=soup.text,
+                updated=datetime.datetime.now(),
+            )
 
             self.add_and_commit(u)
 
             return True
-
 
         return False
 
@@ -577,8 +559,9 @@ class Zayo(Provider):
 
         soup = bs4.BeautifulSoup(msg.get_payload(), features="lxml")
 
-        if (email['Subject'].startswith('***') and
-            'maintenance notification' in self.clean_line(email['Subject'].lower())):
+        if email['Subject'].startswith(
+            '***'
+        ) and 'maintenance notification' in self.clean_line(email['Subject'].lower()):
             result = self.add_new_maint(soup, email)
 
         elif email['Subject'].lower().startswith('reschedule notification'):
@@ -587,16 +570,19 @@ class Zayo(Provider):
         elif email['Subject'].lower().startswith('start maintenance notification'):
             result = self.add_start_maint(soup, email)
 
-        elif email['Subject'].lower().startswith('completed maintenance notification') or \
-        email['Subject'].lower().startswith('end of window'):
+        elif email['Subject'].lower().startswith(
+            'completed maintenance notification'
+        ) or email['Subject'].lower().startswith('end of window'):
             result = self.add_end_maint(soup, email)
 
         elif email['Subject'].lower().startswith('cancelled notification'):
             result = self.add_cancelled_maint(soup, email)
 
-        elif 'TTN-' in email['Subject'] and 'maintenance notification' in email['Subject'].lower():
+        elif (
+            'TTN-' in email['Subject']
+            and 'maintenance notification' in email['Subject'].lower()
+        ):
             result = self.update(soup, email)
-
 
         return result
 
@@ -605,6 +591,7 @@ class GTT(Provider):
     '''
     GTT
     '''
+
     def __init__(self):
         super().__init__()
         self.name = 'gtt'
@@ -630,7 +617,6 @@ class GTT(Provider):
         maint_id = maint_re.groups()[0]
 
         return maint_id
-
 
     def add_new_maint(self, soup, email):
         maint_id = self.get_maint_id(email)
@@ -683,14 +669,14 @@ class GTT(Provider):
                     circuit = Circuit()
                     circuit.provider_cid = cid
                     circuit.a_side = a_side
-                    this = Pro.query.filter_by(name=self.name,
-                                                type=self.type).first()
+                    this = Pro.query.filter_by(name=self.name, type=self.type).first()
                     circuit.provider_id = this.id
                     self.add_and_commit(circuit)
 
                 circuit_row = Circuit.query.filter_by(provider_cid=cid).first()
                 maint_row = Maintenance.query.filter_by(
-                provider_maintenance_id=maint.provider_maintenance_id, rescheduled=0).first()
+                    provider_maintenance_id=maint.provider_maintenance_id, rescheduled=0
+                ).first()
 
                 mc = MaintCircuit(impact=impact, date=start_dt.date())
                 circuit_row.maintenances.append(mc)
@@ -699,15 +685,14 @@ class GTT(Provider):
 
         return True
 
-
-
     def add_end_maint(self, soup, email):
         maint_id = self.get_maint_id(email)
         if not maint_id:
             return False
 
         maint = Maintenance.query.filter_by(
-            provider_maintenance_id=maint_id, rescheduled=0).first()
+            provider_maintenance_id=maint_id, rescheduled=0
+        ).first()
         if not maint:
             return False
 
@@ -726,7 +711,8 @@ class GTT(Provider):
             return False
 
         maint = Maintenance.query.filter_by(
-            provider_maintenance_id=maint_id, rescheduled=0).first()
+            provider_maintenance_id=maint_id, rescheduled=0
+        ).first()
         if not maint:
             return False
 
@@ -736,14 +722,14 @@ class GTT(Provider):
 
         return True
 
-
     def update(self, soup, email):
         maint_id = self.get_maint_id(email)
         if not maint_id:
             return False
 
         maint = Maintenance.query.filter_by(
-            provider_maintenance_id=maint_id, rescheduled=0).first()
+            provider_maintenance_id=maint_id, rescheduled=0
+        ).first()
 
         if not maint:
             return False
@@ -754,14 +740,13 @@ class GTT(Provider):
             for payload in email.get_payload():
                 update_text = payload.get_payload()
 
-        u = MaintUpdate(maintenance_id=maint.id, comment=soup.text,
-            updated=datetime.datetime.now())
+        u = MaintUpdate(
+            maintenance_id=maint.id, comment=soup.text, updated=datetime.datetime.now()
+        )
 
         self.add_and_commit(u)
 
-
         return True
-
 
     def process(self, email):
         msg = None

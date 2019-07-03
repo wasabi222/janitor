@@ -1,4 +1,6 @@
 -r requirements.txt
+black
 pytest
 pytest-mock
 pytest-cov
+docker-compose

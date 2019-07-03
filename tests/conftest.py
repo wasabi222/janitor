@@ -7,9 +7,11 @@ from app.models import Provider, Circuit, Maintenance, MaintCircuit
 import os
 import tempfile
 
+
 @pytest.fixture(scope='module')
 def api():
     return '/api/v1'
+
 
 class TestConfig(Config):
     TESTING = True
@@ -30,14 +32,18 @@ def client():
 
         db.create_all()
         for provider in PROVIDERS:
-             p = provider()
+            p = provider()
         circuit = Circuit(provider_cid='xxx', a_side='a', z_side='z', provider_id=1)
         db.session.add(circuit)
         db.session.commit()
         now = datetime.now()
-        maint = Maintenance(provider_maintenance_id='pmaintid', start=now.time(),
-                            end=now.time(), timezone='US/Eastern',
-                            received_dt=now)
+        maint = Maintenance(
+            provider_maintenance_id='pmaintid',
+            start=now.time(),
+            end=now.time(),
+            timezone='US/Eastern',
+            received_dt=now,
+        )
         mc = MaintCircuit(impact='yuge', date=now.date())
         circuit.maintenances.append(mc)
         mc.maint_id = maint.id
@@ -51,4 +57,3 @@ def client():
         db.drop_all()
     os.close(db_fd)
     os.unlink(a.config['DATABASE_FILE'])
-

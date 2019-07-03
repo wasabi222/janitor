@@ -1,7 +1,8 @@
 import pytest
 import json
 
-headers = {'content-type' : 'application/json'}
+headers = {'content-type': 'application/json'}
+
 
 def test_provider_root(client, api):
     """
@@ -39,4 +40,3 @@ def test_providers_bad_read_one(client, api):
     resp = client.get(f'{api}/providers/99999')
 
     assert resp.status_code == 404
-
