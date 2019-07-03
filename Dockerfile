@@ -14,6 +14,6 @@ RUN apt-get update \
  && pip --no-cache install -r /opt/janitor/requirements.txt \
  && rm /etc/nginx/sites-enabled/default
 
-EXPOSE 80
+EXPOSE 8080
 
 ENTRYPOINT /var/run/init.sh

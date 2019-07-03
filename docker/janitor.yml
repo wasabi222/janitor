@@ -7,6 +7,6 @@ services:
     env_file:
       - ./.env
     ports:
-      - '8080:80'
+      - '8080:8080'
     volumes:
       - ./init.sh:/var/run/init.sh
