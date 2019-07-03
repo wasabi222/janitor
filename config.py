@@ -9,10 +9,10 @@ load_dotenv(os.path.join(basedir, '.env'))
 class Config(object):
     PROJECT_ROOT = os.environ.get('PROJECT_ROOT') or os.getcwd()
     SECRET_KEY = os.environ.get('SECRET_KEY')
-    MAX_CONTENT_LENGTH = os.environ.get('MAX_CONTENT_LENGTH') or 32 * 1024 * 1024
+    MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 32*1024*1024))
     LOGFILE = os.environ.get('LOGFILE') or '/var/log/janitor.log'
-    CHECK_INTERVAL = os.environ.get('CHECK_INTERVAL') or 600
-    POSTS_PER_PAGE = os.environ.get('POSTS_PER_PAGE') or 20
+    CHECK_INTERVAL = int(os.environ.get('CHECK_INTERVAL', 600))
+    POSTS_PER_PAGE = int(os.environ.get('POSTS_PER_PAGE', 20))
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL'
     ) or 'sqlite:///' + os.path.join(basedir, 'app.db')
