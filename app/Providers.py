@@ -11,6 +11,7 @@ import pandas as pd
 import bs4
 import re
 import datetime
+import pytz
 import dateutil.parser as parser
 import time
 
@@ -774,5 +775,199 @@ class GTT(Provider):
 
         elif 'gtt tt#' in email['Subject'].lower():
             result = self.update(soup, email)
+
+        return result
+
+
+class Telia(Provider):
+    '''
+    Telia
+    '''
+
+    def __init__(self):
+        super().__init__()
+        self.name = 'telia'
+        self.type = 'transit'
+        self.email_esc = 'fillmein'
+        if not Pro.query.filter_by(name=self.name, type=self.type).first():
+            p = Pro(name=self.name, type=self.type, email_esc=self.email_esc)
+            self.add_and_commit(p)
+
+    @property
+    def identified_by(self):
+        return b'(FROM ncm UNSEEN)'
+
+    def get_maintenance(self, msg):
+        '''
+        for pulling the id out and returning the maintenance row
+        '''
+        maint_id = re.search('(?<=reference number: )\S+', msg.lower())
+
+        if maint_id and maint_id.group():
+            maint_id = Maintenance.query.filter_by(
+                provider_maintenance_id=maint_id.group(), rescheduled=0
+            ).first()
+
+        return maint_id
+
+    def add_and_commit(self, row):
+        db.session.add(row)
+        db.session.commit()
+
+    def add_new_maint(self, msg, email):
+        maint = Maintenance()
+        provider_id = re.search('(?<=pw reference number: )\S+', msg.lower())
+        maint.provider_maintenance_id = provider_id.group()
+        start_time = re.search('(?<=start date and time: ).+', msg.lower())
+        end_time = re.search('(?<=end date and time: ).+', msg.lower())
+        start_dt = datetime.datetime.strptime(
+            start_time.group().rstrip(), '%Y-%b-%d %H:%M %Z'
+        )
+        start_dt = start_dt.replace(tzinfo=pytz.utc)
+        end_dt = datetime.datetime.strptime(
+            end_time.group().rstrip(), '%Y-%b-%d %H:%M %Z'
+        )
+        end_dt = end_dt.replace(tzinfo=pytz.utc)
+        maint.start = start_dt.time()
+        maint.end = end_dt.time()
+        maint.timezone = start_dt.tzname()
+        reason = re.search('(?<=action and reason: ).+', msg.lower())
+        maint.reason = reason.group()
+        received = email['Received'].splitlines()[-1].strip()
+        maint.received_dt = parser.parse(received)
+        location = re.search('(?<=location of work: ).+', msg.lower())
+        maint.location = location.group().rstrip()
+
+        self.add_and_commit(maint)
+
+        cids = re.findall('service id: (.*)\r', msg.lower())
+        impact = re.findall('impact: (.*)\r', msg.lower())
+
+        all_circuits = list(zip(cids, impact))
+
+        for cid, impact in all_circuits:
+            if not Circuit.query.filter_by(provider_cid=cid).first():
+                c = Circuit()
+                c.provider_cid = cid
+                this = Pro.query.filter_by(name=self.name, type=self.type).first()
+                c.provider_id = this.id
+                self.add_and_commit(c)
+
+            circuit_row = Circuit.query.filter_by(provider_cid=cid).first()
+            maint_row = Maintenance.query.filter_by(
+                provider_maintenance_id=maint.provider_maintenance_id, rescheduled=0
+            ).first()
+
+            mc = MaintCircuit(impact=impact, date=start_dt.date())
+            circuit_row.maintenances.append(mc)
+            mc.maint_id = maint_row.id
+            db.session.commit()
+
+        return True
+
+    def add_cancelled_maint(self, msg, email):
+        maint = self.get_maintenance(msg)
+
+        if not maint:
+            return False
+
+        maint.cancelled = 1
+
+        self.add_and_commit(maint)
+
+        return True
+
+    def add_start_maint(self, msg, email):
+        maint = self.get_maintenance(msg)
+
+        if not maint:
+            return False
+
+        maint.started = 1
+
+        self.add_and_commit(maint)
+
+        for func in started_funcs:
+            func(email=email, maintenance=maint)
+
+        return True
+
+    def add_end_maint(self, msg, email):
+        maint = self.get_maintenance(msg)
+
+        if not maint:
+            return False
+
+        maint.ended = 1
+
+        self.add_and_commit(maint)
+
+        for func in ended_funcs:
+            func(email=email, maintenance=maint)
+
+        return True
+
+    def add_rescheduled_maint(self, msg, email):
+        old_maint = self.get_maintenance(msg)
+
+        if not old_maint:
+            return False
+
+        old_maint.rescheduled = 1
+        self.add_and_commit(old_maint)
+
+        time.sleep(5)
+
+        self.add_new_maint(msg, email)
+
+        new_maint = Maintenance.query.filter_by(
+            provider_maintenance_id=old_maint.provider_maintenance_id, rescheduled=0
+        ).first()
+
+        old_maint.rescheduled_id = new_maint.id
+
+        self.add_and_commit(old_maint)
+
+        return True
+
+    def process(self, email):
+        msg = None
+        result = False
+        b64 = False
+
+        for part in email.walk():
+            if part.get_content_type() == 'text/plain':
+                msg = part.get_payload()
+                if 'telia' in msg.lower():
+                    # this does not need to be decoded
+                    break
+                else:
+                    # this needs to be decoded
+                    msg = base64.b64decode(msg).decode()
+                    break
+
+        if not msg:
+            return False
+
+        if email['Subject'].lower().startswith('planned work') or email[
+            'Subject'
+        ].lower().startswith('urgent!'):
+            result = self.add_new_maint(msg, email)
+
+        elif email['Subject'].lower().startswith('cancellation of'):
+            result = self.add_cancelled_maint(msg, email)
+
+        elif email['Subject'].lower().startswith('reminder for planned'):
+            # we don't care about reminders, mark as processed
+            result = True
+
+        elif 'is about to start' in email['Subject'].lower():
+            result = self.add_start_maint(msg, email)
+
+        elif 'has been completed' in email['Subject']:
+            result = self.add_end_maint(msg, email)
+
+        elif email['Subject'].lower().startswith('update for'):
+            result = self.add_reschedule_maint(msg, email)
 
         return result
