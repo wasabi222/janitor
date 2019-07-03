@@ -16,7 +16,7 @@ class AddCircuitForm(FlaskForm):
     provider = SelectField('provider', choices=choices, coerce=int)
     circuit_contract = FileField(
         'Circuit Contract',
-        validators=[FileRequired(), FileAllowed(documents, 'documents only!')],
+        validators=[FileAllowed(documents, 'documents only!')],
     )
     submit = SubmitField('submit')
 
