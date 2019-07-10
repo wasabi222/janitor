@@ -59,6 +59,14 @@ def create_app(config_class=Config):
 
     connexion_register_blueprint(app, 'api/v1/swagger/main.yaml')
 
+    log_level = {
+        'debug': logging.DEBUG,
+        'info': logging.INFO,
+        'warning': logging.WARNING,
+        'error': logging.ERROR,
+        'critical': logging.CRITICAL,
+    }
+
     if not app.debug and not app.testing:
         file_handler = RotatingFileHandler(
             app.config['LOGFILE'], maxBytes=20480, backupCount=10
@@ -68,10 +76,10 @@ def create_app(config_class=Config):
                 '%(asctime)s %(levelname)s: %(message)s ' '[in %(pathname)s:%(lineno)d]'
             )
         )
-        file_handler.setLevel(logging.INFO)
+        file_handler.setLevel(log_level[app.config['LOG_LEVEL']])
         app.logger.addHandler(file_handler)
 
-        app.logger.setLevel(logging.INFO)
+        app.logger.setLevel(log_level[app.config['LOG_LEVEL']])
         app.logger.info('janitor app started')
 
     return app
