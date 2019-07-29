@@ -238,6 +238,9 @@ class StandardProvider(Provider):
         if not info:
             return False
 
+        if 'X-MAINTNOTE-STATUS' not in info:
+            return False
+
         if info['X-MAINTNOTE-STATUS'].lower() in ['confirmed', 'tentative']:
             result = self.add_new_maint(email, info)
 
