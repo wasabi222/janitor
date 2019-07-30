@@ -28,6 +28,7 @@ class Config(object):
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
     MAIL_CLIENT = os.environ.get('MAIL_CLIENT')
+    JANITOR_URL = os.environ.get('JANITOR_URL')
     # Uploads
     UPLOADS_DEFAULT_DEST = PROJECT_ROOT + '/app/static/circuits/'
     UPLOADED_DOCUMENTS_DEST = PROJECT_ROOT + '/app/static/circuits/'
