@@ -22,7 +22,13 @@ import json
 def post_to_slack(email, maintenance, **kwargs):
     url = current_app.config['SLACK_CHANNEL']
     channel = current_app.config['SLACK_WEBHOOK_URL']
-    text = f'maintenance {maintenance.provider_maintenance_id} has STARTED!\n'
+    janitor_url = current_app.config['JANITOR_URL']
+    if janitor_url:
+        text = f'Maintenance <{janitor_url}/maintenances/{maintenance.id}|{maintenance.provider_maintenance_id}> has STARTED!\n'
+    else:
+        text = f'Maintenance {maintenance.provider_maintenance_id} has STARTED!\n'
+    text += f'*Location*: {maintenance.location}\n'
+    text += f'*Start*: {maintenance.start}, *End*: {maintenance.end} (*Timezone*: {maintenance.timezone})\n'
     username = 'janitor'
 
     data_dict = {'channel': channel, 'text': text, 'username': username}
