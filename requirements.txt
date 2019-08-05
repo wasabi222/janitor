@@ -1,3 +1,4 @@
+pyyaml
 icalendar
 mysqlclient
 psycopg2

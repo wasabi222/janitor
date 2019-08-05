@@ -1,4 +1,6 @@
 import os
+
+import yaml
 from dotenv import load_dotenv
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
@@ -7,29 +9,41 @@ load_dotenv(os.path.join(basedir, '.env'))
 
 
 class Config(object):
-    PROJECT_ROOT = os.environ.get('PROJECT_ROOT') or os.getcwd()
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 32 * 1024 * 1024))
-    LOGFILE = os.environ.get('LOGFILE') or '/var/log/janitor.log'
-    CHECK_INTERVAL = int(os.environ.get('CHECK_INTERVAL', 600))
-    POSTS_PER_PAGE = int(os.environ.get('POSTS_PER_PAGE', 20))
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL'
-    ) or 'sqlite:///' + os.path.join(basedir, 'app.db')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SCHEDULER_JOBSTORES = {'default': SQLAlchemyJobStore(url=SQLALCHEMY_DATABASE_URI)}
-    SCHEDULER_API_ENABLED = True
-    SCHEDULER_TIMEZONE = 'UTC'
-    TZ_PREFIX = os.environ.get('TZ_PREFIX')
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAILBOX = os.environ.get('MAILBOX') or 'INBOX'
-    SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL')
-    SLACK_CHANNEL = os.environ.get('SLACK_CHANNEL')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    MAIL_SERVER = os.environ.get('MAIL_SERVER')
-    MAIL_CLIENT = os.environ.get('MAIL_CLIENT')
-    JANITOR_URL = os.environ.get('JANITOR_URL')
-    # Uploads
-    UPLOADS_DEFAULT_DEST = PROJECT_ROOT + '/app/static/circuits/'
-    UPLOADED_DOCUMENTS_DEST = PROJECT_ROOT + '/app/static/circuits/'
-    UPLOADED_DOCUMENTS_ALLOW = ('pdf', 'zip', 'gzip', 'tar', 'bz')
+    def __init__(self):
+        self.CONFIG_FILE = os.environ.get('CONFIG_FILE')
+        self._CONFIG = {}
+        if self.CONFIG_FILE:
+            with open(self.CONFIG_FILE) as cfg_file:
+                self._CONFIG = yaml.load(cfg_file)
+        # When adding a new configuration variable, make sure to add its default here.
+        defaults = {
+            'PROJECT_ROOT': os.getcwd(),
+            'SECRET_KEY': None,
+            'MAX_CONTENT_LENGTH': 32 * 1024 * 1024,
+            'LOGFILE': '/var/log/janitor.log',
+            'CHECK_INTERVAL': 600,
+            'POSTS_PER_PAGE': 20,
+            'DATABASE_URL': None,
+            'SQLALCHEMY_DATABASE_URI': 'sqlite:///' + os.path.join(basedir, 'app.db'),
+            'SQLALCHEMY_TRACK_MODIFICATIONS': True,
+            'SCHEDULER_API_ENABLED': True,
+            'UPLOADED_DOCUMENTS_ALLOW': ('pdf', 'zip', 'gzip', 'tar', 'bz'),
+            'SCHEDULER_TIMEZONE': 'UTC',
+            'TZ_PREFIX': None,
+            'MAILBOX': 'INBOX',
+            'MAIL_USERNAME': None,
+            'MAIL_PASSWORD': None,
+            'MAIL_SERVER': None,
+            'MAIL_CLIENT': 'gmail',
+            'JANITOR_URL': None,
+            'SLACK_WEBHOOK_URL': None,
+            'SLACK_CHANNEL': None,
+        }
+        for attr, default in defaults.items():
+            value = os.environ.get(attr, self._CONFIG.get(attr, default))
+            setattr(self, attr, value)
+        if self.DATABASE_URL:
+            self.SQLALCHEMY_DATABASE_URI = self.DATABASE_URL
+        # Uploads
+        self.UPLOADS_DEFAULT_DEST = self.PROJECT_ROOT + '/app/static/circuits/'
+        self.UPLOADED_DOCUMENTS_DEST = self.PROJECT_ROOT + '/app/static/circuits/'
