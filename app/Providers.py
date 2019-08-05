@@ -7,7 +7,7 @@ import json
 import icalendar
 import base64
 from flask import current_app
-import pandas as pd
+import pandas
 import bs4
 import re
 import datetime
@@ -19,7 +19,7 @@ from app.models import Maintenance, Circuit, MaintCircuit, MaintUpdate
 from app.models import Provider as Pro  # don't conflict with the class below
 from app import db
 
-from app.jobs.started import FUNCS as started_funcs
+import app.jobs.started
 from app.jobs.ended import FUNCS as ended_funcs
 
 
@@ -52,6 +52,21 @@ class Provider(metaclass=ABCMeta):
         the maintenance in the db.
         '''
         pass
+
+    def maint_started_jobs(maint, email):
+        maint.started = 1
+        self.add_and_commit(maint)
+        if (
+            'jobs' in current_app.config['_CONFIG']
+            and 'started' in current_app.config['_CONFIG']['jobs']
+        ):
+            for func_name in current_app.CONFIG['_CONFIG']['jobs']['started']:
+                func = getattr(app.jobs.started, func_name)
+                func(email=email, maintenance=maint)
+        else:
+            for func in app.jobs.started.FUNCS:
+                func(email=email, maintenance=maint)
+        return True
 
 
 class StandardProvider(Provider):
@@ -161,14 +176,7 @@ class StandardProvider(Provider):
         if not maint:
             return False
 
-        maint.started = 1
-
-        self.add_and_commit(maint)
-
-        for func in started_funcs:
-            func(email=email, maintenance=maint)
-
-        return True
+        return self.maint_started_jobs(maint, email)
 
     def add_end_maint(self, email, cal):
         '''
@@ -331,7 +339,7 @@ class Zayo(Provider):
         return line.replace('\r', '').replace('=', '').replace('\n', '')
 
     def format_circuit_table(self, table):
-        ptable = pd.read_html(str(table))
+        ptable = pandas.read_html(str(table))
         assert len(ptable) == 1
         ptable = ptable[0]
         # columns:
@@ -368,14 +376,7 @@ class Zayo(Provider):
         if not maint:
             return False
 
-        maint.started = 1
-
-        self.add_and_commit(maint)
-
-        for func in started_funcs:
-            func(email=email, maintenance=maint)
-
-        return True
+        return self.maint_started_jobs(maint, email)
 
     def add_end_maint(self, soup, email):
         maint = self.get_maintenance(soup)
@@ -883,14 +884,7 @@ class Telia(Provider):
         if not maint:
             return False
 
-        maint.started = 1
-
-        self.add_and_commit(maint)
-
-        for func in started_funcs:
-            func(email=email, maintenance=maint)
-
-        return True
+        return self.maint_started_jobs(maint, email)
 
     def add_end_maint(self, msg, email):
         maint = self.get_maintenance(msg)
