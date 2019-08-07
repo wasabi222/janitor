@@ -82,7 +82,9 @@ The channel to post slack messages to. default: None
 Below walks through installation on ubuntu
 
 ## Database
-You can choose any database you'd like. The example below uses mariadb.
+You can choose any database you'd like. The examples below cover mariadb and postgres.
+
+## mariadb
 1. install mariadb
 ```
 apt install mariadb-server
@@ -96,12 +98,29 @@ pip3 install mysqlclient
 ```
 mariadb
 MariaDB [(none)]> create database janitor CHARACTER SET utf8;
-MariaDB [(none)]> CREATE USER 'janitor'@'localhost';
+MariaDB [(none)]> CREATE USER 'janitor'@'localhost' IDENTIFIED BY 'mypass';
 MariaDB [(none)]> GRANT ALL PRIVILEGES ON janitor.* TO 'janitor'@'localhost';
 MariaDB [(none)]> quit
 
 ```
 
+## postgres
+1. install postgres
+```
+apt install postgresql
+```
+2. install postgres dependencies
+```
+pip3 install psycopg2
+```
+3. create the database
+```
+sudo -u postgres -i
+psql
+CREATE DATABASE janitor ENCODING 'UTF8';
+CREATE USER janitor WITH PASSWORD mypass;
+GRANT ALL PRIVILEGES ON DATABASE janitor to janitor;
+```
 
 ## requirements
 janitor requires python3.6
@@ -116,10 +135,13 @@ source venv/bin/activate
 ```
 pip3 install -r requirements.txt
 ```
-4. create a `.env` configuration files with the necessary variables. For example:
+4. create a `.env` configuration files with the necessary variables. For example(note the different DATABASE_URL names based on the DB you're using):
 ```
 PROJECT_ROOT='/opt/janitor'
-DATABASE_URL='mysql://janitor@localhost/janitor?charset=utf8'
+# mariadb:
+DATABASE_URL='mysql://janitor@localhost:mypass/janitor?charset=utf8'
+# postgres:
+DATABASE_URL='postgresql+psycopg2://janitor:mypass@127.0.0.1:5432/janitor'
 CHECK_INTERVAL=300
 SLACK_WEBHOOK_URL='https://hooks.slack.com/abc123'
 SLACK_CHANNEL='#mychannel'

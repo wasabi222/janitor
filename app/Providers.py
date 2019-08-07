@@ -631,7 +631,7 @@ class GTT(Provider):
         start_re = re.search(r'Start: (.*)\r', soup.text)
         end_re = re.search(r'End: (.*)\r', soup.text)
         location_re = re.search(r'Location: (.*)\r', soup.text)
-        reason_re = re.search(r'Reason: (.*)\r', soup.text)
+        reason_re = re.search(r'Reason: (.*)(\r|\n)', soup.text)
         impact_re = re.search(r'Impact: (.*)\r', soup.text)
         impact = impact_re.groups()[0]
         start_dt = parser.parse(start_re.groups()[0])
@@ -761,8 +761,6 @@ class GTT(Provider):
             return False
 
         soup = bs4.BeautifulSoup(msg.get_payload(), features="lxml")
-        # the html is wrapped only in a <pre> tag, so bs4 can't help much
-        soup = soup.find('pre')
 
         if 'work announcement' in email['Subject'].lower():
             result = self.add_new_maint(soup, email)

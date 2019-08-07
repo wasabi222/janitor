@@ -61,16 +61,16 @@ class Maintenance(db.Model):
     start = db.Column(db.TIME)
     end = db.Column(db.TIME)
     timezone = db.Column(db.String(128), nullable=True)
-    cancelled = db.Column(db.BOOLEAN, default=0)
-    rescheduled = db.Column(db.BOOLEAN, default=0)
+    cancelled = db.Column(db.INT, default=0)
+    rescheduled = db.Column(db.INT, default=0)
     rescheduled_id = db.Column(
         db.Integer, db.ForeignKey('maintenance.id'), nullable=True
     )
     location = db.Column(db.String(2048), index=True, nullable=True)
     reason = db.Column(db.TEXT(), nullable=True)
     received_dt = db.Column(db.DateTime)
-    started = db.Column(db.BOOLEAN, default=0)
-    ended = db.Column(db.BOOLEAN, default=0)
+    started = db.Column(db.INT, default=0)
+    ended = db.Column(db.INT, default=0)
     updates = db.relationship('MaintUpdate', backref='maintenance', lazy='dynamic')
 
     def __repr__(self):
