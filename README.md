@@ -81,6 +81,16 @@ The channel to post slack messages to. default: None
 # Setup
 Below walks through installation on ubuntu
 
+First, clone this repository into `/opt`:
+```
+cd /opt && git clone https://github.com/wasabi222/janitor.git
+```
+
+Next, work within the `janitor` directory:
+```
+cd janitor
+```
+
 ## Database
 You can choose any database you'd like. The examples below cover mariadb and postgres.
 
@@ -135,7 +145,7 @@ source venv/bin/activate
 ```
 pip3 install -r requirements.txt
 ```
-4. create a `.env` configuration files with the necessary variables. For example(note the different DATABASE_URL names based on the DB you're using):
+4. create a `.env` configuration files with the necessary variables. For example (note the different DATABASE_URL names based on the DB you're using):
 ```
 PROJECT_ROOT='/opt/janitor'
 # mariadb:
