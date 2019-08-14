@@ -149,7 +149,7 @@ pip3 install -r requirements.txt
 ```
 PROJECT_ROOT='/opt/janitor'
 # mariadb:
-DATABASE_URL='mysql://janitor@localhost:mypass/janitor?charset=utf8'
+DATABASE_URL='mysql://janitor:mypass@localhost/janitor?charset=utf8'
 # postgres:
 DATABASE_URL='postgresql+psycopg2://janitor:mypass@127.0.0.1:5432/janitor'
 CHECK_INTERVAL=300
