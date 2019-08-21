@@ -20,9 +20,11 @@ import json
 
 
 def post_to_slack(email, maintenance, **kwargs):
-    url = current_app.config['SLACK_CHANNEL']
-    channel = current_app.config['SLACK_WEBHOOK_URL']
+    url = current_app.config['SLACK_WEBHOOK_URL']
+    channel = current_app.config['SLACK_CHANNEL']
     janitor_url = current_app.config['JANITOR_URL']
+    if not (url and channel):
+        return
     if janitor_url:
         text = f'Maintenance <{janitor_url}/maintenances/{maintenance.id}|{maintenance.provider_maintenance_id}> has STARTED!\n'
     else:

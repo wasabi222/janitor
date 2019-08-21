@@ -1,6 +1,8 @@
-Dockerfile
+Dockerfile*
 LICENSE
 tests/
+migrations/
+docker/.env
 requirements-dev.txt
 .git/
 .gitignore

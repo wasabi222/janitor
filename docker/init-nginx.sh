@@ -11,4 +11,8 @@ if [ "$INIT_DB" == true ]; then
     flask db upgrade
 fi
 
-/usr/local/bin/gunicorn -b localhost:8000 -w 4 janitor:app --preload
+/usr/bin/supervisord
+
+if [ "$START_NGINX" == true ]; then
+    /usr/sbin/nginx -g "daemon off;"
+fi

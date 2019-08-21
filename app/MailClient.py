@@ -1,8 +1,12 @@
 '''
 pluggable mail client.
 '''
+import logging
+
 from abc import ABCMeta, abstractmethod
 import imaplib, email
+
+log = logging.getLogger(__name__)
 
 
 class MailClient(metaclass=ABCMeta):
@@ -74,6 +78,8 @@ class Gmail(MailClient):
             self.open_session()
         resps = []
         boxes = self.session.list()
+        log.debug('Boxes:')
+        log.debug(str(boxes))
         processed_box_exists = [box.split()[-1] == b'"processed"' for box in boxes[1]]
         if not any(processed_box_exists):
             typ, create_resp = self.session.create('processed')
@@ -89,12 +95,15 @@ class Gmail(MailClient):
 
     def open_session(self):
         if not self.session:
+            log.debug('Opening session for %s', self.email)
             self.session = imaplib.IMAP4_SSL(self.server)
             self.session.login(self.email, self.passwd)
+            log.debug('Session with %s open', self.email)
             return self.session
 
     def close_session(self):
         if self.session:
+            log.debug('Closing session for %s', self.email)
             if self.session.state == 'SELECTED':
                 self.session.close()
             if self.session.state == 'AUTH':

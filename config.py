@@ -10,7 +10,8 @@ class Config(object):
     PROJECT_ROOT = os.environ.get('PROJECT_ROOT') or os.getcwd()
     SECRET_KEY = os.environ.get('SECRET_KEY')
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 32 * 1024 * 1024))
-    LOGFILE = os.environ.get('LOGFILE') or '/var/log/janitor.log'
+    LOGFILE = os.environ.get('LOGFILE', '/var/log/janitor.log')
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'info')
     CHECK_INTERVAL = int(os.environ.get('CHECK_INTERVAL', 600))
     POSTS_PER_PAGE = int(os.environ.get('POSTS_PER_PAGE', 20))
     SQLALCHEMY_DATABASE_URI = os.environ.get(
@@ -22,7 +23,7 @@ class Config(object):
     SCHEDULER_TIMEZONE = 'UTC'
     TZ_PREFIX = os.environ.get('TZ_PREFIX')
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAILBOX = os.environ.get('MAILBOX') or 'INBOX'
+    MAILBOX = os.environ.get('MAILBOX', 'INBOX')
     SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL')
     SLACK_CHANNEL = os.environ.get('SLACK_CHANNEL')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
