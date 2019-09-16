@@ -416,7 +416,8 @@ class Zayo(Provider):
         old_maint = self.get_maintenance(soup)
 
         if not old_maint:
-            return False
+            self.add_new_maint(soup, email)
+            return True
 
         old_maint.rescheduled = 1
         self.add_and_commit(old_maint)
