@@ -654,7 +654,7 @@ class GTT(Provider):
 
         for line in soup.text.splitlines():
             if 'gtt service' in line.lower():
-                cid = re.search(r'= (.+);', line)
+                cid = re.search(r'GTT Service = (.+);', line)
                 if cid:
                     cids.add(cid.groups()[0])
             elif line.lower().startswith('site address'):
