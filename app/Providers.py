@@ -141,7 +141,7 @@ class StandardProvider(Provider):
         if not maint:
             return False
 
-        maint.cancelled = 1
+        maint.cancelled = '1'
 
         self.add_and_commit(maint)
 
@@ -402,7 +402,7 @@ class Zayo(Provider):
         if not maint:
             return False
 
-        maint.cancelled = 1
+        maint.cancelled = '1'
 
         self.add_and_commit(maint)
 
@@ -721,7 +721,7 @@ class GTT(Provider):
         if not maint:
             return False
 
-        maint.cancelled = 1
+        maint.cancelled = '1'
 
         self.add_and_commit(maint)
 
@@ -873,7 +873,7 @@ class Telia(Provider):
         if not maint:
             return False
 
-        maint.cancelled = 1
+        maint.cancelled = '1'
 
         self.add_and_commit(maint)
 
