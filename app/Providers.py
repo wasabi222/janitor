@@ -23,6 +23,14 @@ from app.jobs.started import FUNCS as started_funcs
 from app.jobs.ended import FUNCS as ended_funcs
 
 
+class ParsingError(Exception):
+    '''
+    Raised when unable to parse the maintenance notification.
+    '''
+
+    pass
+
+
 class Provider(metaclass=ABCMeta):
     '''
     this is a provider that DOES NOT implement the MAINTNOTE standard and
@@ -637,6 +645,12 @@ class GTT(Provider):
         location_re = re.search(r'Location: (.*)\r', soup.text)
         reason_re = re.search(r'Reason: (.*)(\r|\n)', soup.text)
         impact_re = re.search(r'Impact: (.*)\r', soup.text)
+        if not all((start_re, end_re, location_re, reason_re, impact_re)):
+            raise ParsingError(
+                'Unable to parse the maintenance notification from GTT: {}'.format(
+                    soup.text
+                )
+            )
         impact = impact_re.groups()[0]
         start_dt = parser.parse(start_re.groups()[0])
         end_dt = parser.parse(end_re.groups()[0])
@@ -822,6 +836,16 @@ class Telia(Provider):
         maint.provider_maintenance_id = provider_id.group()
         start_time = re.search('(?<=start date and time: ).+', msg.lower())
         end_time = re.search('(?<=end date and time: ).+', msg.lower())
+        reason = re.search('(?<=action and reason: ).+', msg.lower())
+        location = re.search('(?<=location of work: ).+', msg.lower())
+        cids = re.findall('service id: (.*)\r', msg.lower())
+        impact = re.findall('impact: (.*)\r', msg.lower())
+        if not all((provider_id, start_time, end_time, reason, location, cids, impact)):
+            raise ParsingError(
+                'Unable to parse the maintenance notification from Telia: {}'.format(
+                    msg
+                )
+            )
         start_dt = datetime.datetime.strptime(
             start_time.group().rstrip(), '%Y-%b-%d %H:%M %Z'
         )
@@ -833,17 +857,12 @@ class Telia(Provider):
         maint.start = start_dt.time()
         maint.end = end_dt.time()
         maint.timezone = start_dt.tzname()
-        reason = re.search('(?<=action and reason: ).+', msg.lower())
         maint.reason = reason.group()
         received = email['Received'].splitlines()[-1].strip()
         maint.received_dt = parser.parse(received)
-        location = re.search('(?<=location of work: ).+', msg.lower())
         maint.location = location.group().rstrip()
 
         self.add_and_commit(maint)
-
-        cids = re.findall('service id: (.*)\r', msg.lower())
-        impact = re.findall('impact: (.*)\r', msg.lower())
 
         all_circuits = list(zip(cids, impact))
 
