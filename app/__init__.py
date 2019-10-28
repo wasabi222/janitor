@@ -33,10 +33,7 @@ scheduler = APScheduler()
 
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
 if HAS_SENTRY and SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[FlaskIntegration()]
-    )
+    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[FlaskIntegration()])
 
 
 def process_startup():
