@@ -1,5 +1,7 @@
+import os
 import logging
 from logging.handlers import RotatingFileHandler
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_moment import Moment
@@ -12,6 +14,14 @@ from config import Config
 from flask_uploads import UploadSet, DOCUMENTS, configure_uploads
 import connexion
 
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+
+    HAS_SENTRY = True
+except ImportError:
+    HAS_SENTRY = False
+
 db = SQLAlchemy()
 moment = Moment()
 migrate = Migrate()
@@ -19,6 +29,11 @@ bootstrap = Bootstrap()
 ma = Marshmallow()
 documents = UploadSet('documents', DOCUMENTS)
 scheduler = APScheduler()
+
+
+SENTRY_DSN = os.environ.get('SENTRY_DSN')
+if HAS_SENTRY and SENTRY_DSN:
+    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[FlaskIntegration()])
 
 
 def process_startup():
