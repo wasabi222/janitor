@@ -73,6 +73,9 @@ If you wish to send messages to slack, you can define this. default: None
 ### SLACK_CHANNEL
 The channel to post slack messages to. default: None
 
+### PROMETHEUS_DIR
+The directory to store multiprocess prometheus metrics. default: /tmp/janitor_prometheus 
+
 
 # database schema
 
