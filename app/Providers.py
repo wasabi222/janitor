@@ -772,13 +772,19 @@ class GTT(Provider):
         result = False
         for part in email.walk():
             if part.get_content_type() == 'text/html':
-                msg = part
-                break
+                msg = part.get_payload()
+                if 'gtt service' in msg.lower():
+                    # this does not need to be decoded
+                    break
+                else:
+                    # this needs to be decoded
+                    msg = base64.b64decode(msg).decode()
+                    break
 
         if not msg:
             return False
 
-        soup = bs4.BeautifulSoup(msg.get_payload(), features="lxml")
+        soup = bs4.BeautifulSoup(msg, features="lxml")
 
         if 'work announcement' in email['Subject'].lower():
             result = self.add_new_maint(soup, email)
