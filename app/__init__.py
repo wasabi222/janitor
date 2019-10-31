@@ -1,6 +1,8 @@
+import os
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_moment import Moment
@@ -15,6 +17,14 @@ import connexion
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from prometheus_client import multiprocess, make_wsgi_app, CollectorRegistry
 
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+
+    HAS_SENTRY = True
+except ImportError:
+    HAS_SENTRY = False
+
 db = SQLAlchemy()
 moment = Moment()
 migrate = Migrate()
@@ -23,6 +33,11 @@ ma = Marshmallow()
 documents = UploadSet('documents', DOCUMENTS)
 scheduler = APScheduler()
 registry = CollectorRegistry()
+
+
+SENTRY_DSN = os.environ.get('SENTRY_DSN')
+if HAS_SENTRY and SENTRY_DSN:
+    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[FlaskIntegration()])
 
 
 def process_startup():
