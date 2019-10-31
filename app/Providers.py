@@ -46,7 +46,12 @@ IN_PROGRESS = Gauge('janitor_maintenances_inprogress',
               registry=registry
                     )
 
+class ParsingError(Exception):
+    '''
+    Raised when unable to parse the maintenance notification.
+    '''
 
+    pass
 
 class Provider(metaclass=ABCMeta):
     '''
