@@ -13,6 +13,8 @@ from flask_bootstrap import Bootstrap
 from config import Config
 from flask_uploads import UploadSet, DOCUMENTS, configure_uploads
 import connexion
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from prometheus_client import multiprocess, make_wsgi_app, CollectorRegistry
 
 try:
     import sentry_sdk
@@ -29,6 +31,7 @@ bootstrap = Bootstrap()
 ma = Marshmallow()
 documents = UploadSet('documents', DOCUMENTS)
 scheduler = APScheduler()
+registry = CollectorRegistry()
 
 
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
@@ -53,6 +56,28 @@ def create_app(config_class=Config):
         }
     ]
     app.config['JOBS'] = JOBS
+
+    metrics_dir = app.config['PROMETHEUS_DIR']
+
+    if not metrics_dir:
+        metrics_dir = '/tmp/janitor_prometheus'
+
+    os.environ['prometheus_multiproc_dir'] = metrics_dir
+
+    if not os.path.exists(metrics_dir):
+        try:
+            os.makedirs(metrics_dir)
+        except OSError:
+            # app.logger.error("Failed to create metrics directory!")
+            raise Exception("Failed to create metrics directory!")
+
+    files = os.listdir(metrics_dir)
+
+    for f in files:
+        if f.endswith(".db"):
+            os.remove(os.path.join(metrics_dir, f))
+
+
 
     db.init_app(app)
     moment.init_app(app)
@@ -96,6 +121,13 @@ def create_app(config_class=Config):
 
         app.logger.setLevel(log_level[app.config['LOG_LEVEL']])
         app.logger.info('janitor app started')
+
+    multiprocess.MultiProcessCollector(registry)
+
+    app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+        '/metrics': make_wsgi_app(registry)
+    })
+
 
     return app
 

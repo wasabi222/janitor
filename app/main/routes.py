@@ -28,22 +28,8 @@ from app.main.forms import AddCircuitForm, AddCircuitContract, EditCircuitForm
 from app.jobs.main import process, failed_messages
 
 
-# @todo: expose some interesting metrics
-MAIN_REQUESTS = pc.Counter(
-    'main_page_requests_total', 'total requests for the / route.'
-)
-
-
-@bp.route('/metrics')
-def metrics():
-    return Response(
-        pc.generate_latest(), mimetype='text/plain; version=0.0.4; charset=utf-8'
-    )
-
-
 @bp.route('/', methods=['GET', 'POST'])
 def main():
-    MAIN_REQUESTS.inc()
     next_run = db.session.query(ApschedulerJobs).filter_by(id='run_loop').first()
     if next_run:
         next_run = datetime.utcfromtimestamp(next_run.next_run_time)

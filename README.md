@@ -73,6 +73,9 @@ If you wish to send messages to slack, you can define this. default: None
 ### SLACK_CHANNEL
 The channel to post slack messages to. default: None
 
+### PROMETHEUS_DIR
+The directory to store multiprocess prometheus metrics. default: /tmp/janitor_prometheus 
+
 
 # database schema
 
@@ -187,7 +190,7 @@ pip3 install gunicorn
 2. create /etc/supervisor/conf.d/janitor.conf with the following contents:
 ```
 [program:janitor]
-command=/opt/janitor/venv/bin/gunicorn -b localhost:8000 -w 4 janitor:app --preload
+command=/opt/janitor/venv/bin/gunicorn -b localhost:8000 -c /opt/janitor/gunicorn_config.py -w 4 janitor:app --preload
 directory=/opt/janitor
 user=root
 autostart=true

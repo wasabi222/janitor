@@ -14,14 +14,37 @@ import datetime
 import pytz
 import dateutil.parser as parser
 import time
+from prometheus_client import Counter, Gauge
 
 from app.models import Maintenance, Circuit, MaintCircuit, MaintUpdate
 from app.models import Provider as Pro  # don't conflict with the class below
-from app import db
+from app import db, registry
 
 from app.jobs.started import FUNCS as started_funcs
 from app.jobs.ended import FUNCS as ended_funcs
 
+
+NEW_PARENT_MAINT = Counter('janitor_maintenances_total',
+              'total number of master maintenances, which many contain many CIDs',
+              labelnames=['provider',
+                          ],
+              registry=registry
+              )
+
+NEW_CID_MAINT = Counter('janitor_cid_maintenances_total',
+              'total number of maintenances on a circuit for each window',
+              labelnames=['cid',
+                          ],
+              registry=registry
+              )
+
+
+IN_PROGRESS = Gauge('janitor_maintenances_inprogress',
+                    'maintenances marked as started and have not ended',
+                    labelnames=['provider',
+                                ],
+              registry=registry
+                    )
 
 class ParsingError(Exception):
     '''
@@ -108,6 +131,8 @@ class StandardProvider(Provider):
 
         self.add_and_commit(maint)
 
+        NEW_PARENT_MAINT.labels(provider=self.name).inc()
+
         cids = []
 
         if type(cal['X-MAINTNOTE-OBJECT-ID']) == list:
@@ -133,6 +158,7 @@ class StandardProvider(Provider):
             circuit_row.maintenances.append(mc)
             mc.maint_id = maint_row.id
             db.session.commit()
+            NEW_CID_MAINT.labels(cid=cid).inc()
 
         return True
 
@@ -173,6 +199,8 @@ class StandardProvider(Provider):
 
         self.add_and_commit(maint)
 
+        IN_PROGRESS.labels(provider=self.name).inc()
+
         for func in started_funcs:
             func(email=email, maintenance=maint)
 
@@ -194,6 +222,8 @@ class StandardProvider(Provider):
         maint.ended = 1
 
         self.add_and_commit(maint)
+
+        IN_PROGRESS.labels(provider=self.name).dec()
 
         for func in ended_funcs:
             func(email=email, maintenance=maint)
@@ -383,6 +413,8 @@ class Zayo(Provider):
 
         self.add_and_commit(maint)
 
+        IN_PROGRESS.labels(provider=self.name).inc()
+
         for func in started_funcs:
             func(email=email, maintenance=maint)
 
@@ -398,6 +430,8 @@ class Zayo(Provider):
             maint.ended = 1
 
             self.add_and_commit(maint)
+
+            IN_PROGRESS.labels(provider=self.name).dec()
 
         for func in ended_funcs:
             func(email=email, maintenance=maint)
@@ -503,6 +537,8 @@ class Zayo(Provider):
 
         self.add_and_commit(maint)
 
+        NEW_PARENT_MAINT.labels(provider=self.name).inc()
+
         cid_table = self.format_circuit_table(table)
         for row in cid_table.values:
             if not Circuit.query.filter_by(provider_cid=row[0]).first():
@@ -529,6 +565,7 @@ class Zayo(Provider):
                 circuit_row.maintenances.append(mc)
                 mc.maint_id = maint_row.id
                 db.session.commit()
+                NEW_CID_MAINT.labels(cid=circuit_row.provider_cid).inc()
 
         return True
 
@@ -662,6 +699,8 @@ class GTT(Provider):
 
         self.add_and_commit(maint)
 
+        NEW_PARENT_MAINT.labels(provider=self.name).inc()
+
         # sometimes maint emails contain the same cid several times
         cids = set()
         a_side = set()
@@ -701,6 +740,7 @@ class GTT(Provider):
                 circuit_row.maintenances.append(mc)
                 mc.maint_id = maint_row.id
                 db.session.commit()
+                NEW_CID_MAINT.labels(cid=cid).inc()
 
         return True
 
@@ -718,6 +758,9 @@ class GTT(Provider):
         maint.ended = 1
 
         self.add_and_commit(maint)
+
+        # GTT doesn't send maint started emails so there's nothing to decrement
+        # IN_PROGRESS.labels(provider=self.name).dec()
 
         for func in ended_funcs:
             func(email=email, maintenance=maint)
@@ -870,6 +913,13 @@ class Telia(Provider):
 
         self.add_and_commit(maint)
 
+
+        NEW_PARENT_MAINT.labels(provider=self.name).inc()
+
+        cids = re.findall('service id: (.*)\r', msg.lower())
+        impact = re.findall('impact: (.*)\r', msg.lower())
+
+
         all_circuits = list(zip(cids, impact))
 
         for cid, impact in all_circuits:
@@ -889,6 +939,7 @@ class Telia(Provider):
             circuit_row.maintenances.append(mc)
             mc.maint_id = maint_row.id
             db.session.commit()
+            NEW_CID_MAINT.labels(cid=cid).inc()
 
         return True
 
@@ -914,6 +965,8 @@ class Telia(Provider):
 
         self.add_and_commit(maint)
 
+        IN_PROGRESS.labels(provider=self.name).inc()
+
         for func in started_funcs:
             func(email=email, maintenance=maint)
 
@@ -928,6 +981,8 @@ class Telia(Provider):
         maint.ended = 1
 
         self.add_and_commit(maint)
+
+        IN_PROGRESS.labels(provider=self.name).dec()
 
         for func in ended_funcs:
             func(email=email, maintenance=maint)
