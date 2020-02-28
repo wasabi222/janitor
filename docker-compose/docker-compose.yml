@@ -1,0 +1,93 @@
+version: '3.7'
+services:
+  nginx-janitor:
+    image: 'nginx-janitor:0.2.0'
+    init: true
+    healthcheck:
+      test: ['CMD-SHELL', 'curl --fail 127.0.0.1 || exit 1']
+      interval: 1m30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    build:
+      context: ../
+      dockerfile: Dockerfile-nginx
+    container_name: nginx-janitor
+    restart: unless-stopped
+    depends_on:
+      - janitor
+    ports:
+      - '80:80'
+      - '443:443'
+    networks:
+      - janitornet
+    volumes:
+      - type: bind
+        source: ./ssl
+        target: /etc/ssl
+      - 'janitorvol:/opt/janitor/app/static/circuits:rw'
+  janitor:
+    image: 'janitor:0.2.0' # networkandrew/janitor:0.2.0
+    init: true
+    dns: 9.9.9.9
+    network_mode: "bridge"
+    env_file: janitor.env
+    healthcheck:
+      test: ['CMD-SHELL', 'curl janitor:8000 || exit 1']
+      interval: 1m30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    build:
+      context: ../
+    container_name: janitor
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    volumes:
+      - 'janitorvol:/opt/janitor/janitor:rw'
+    networks:
+      - janitornet
+  postgres:
+    image: 'postgres:11.5'
+    init: true
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready || exit 1']
+      interval: 1m30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    env_file: postgres.env
+    volumes:
+      - 'dbvol:/var/lib/postgresql/data'
+    networks:
+      - janitornet
+    environment:
+      - 'POSTGRES_USER=postgres'
+      - 'POSTGRES_PASSWORD=mypass'
+      - 'POSTGRES_DB=janitor'
+  adminer:
+    image: adminer
+    init: true
+    healthcheck:
+      test: ['CMD-SHELL', 'curl adminer:8080 || exit 1']
+      interval: 1m30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+    networks:
+      - janitornet
+networks:
+  janitornet:
+    driver: bridge
+volumes:
+  janitorvol:
+    driver: local 
+  dbvol:
+    driver: local

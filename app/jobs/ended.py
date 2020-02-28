@@ -32,6 +32,9 @@ def post_to_slack(email, maintenance, **kwargs):
     text += f'*Location*: {maintenance.location}\n'
     username = 'janitor'
 
+    if not channel.startswith('#'):
+        channel = '#' + channel
+
     data_dict = {'channel': channel, 'text': text, 'username': username}
 
     js = json.dumps(data_dict)

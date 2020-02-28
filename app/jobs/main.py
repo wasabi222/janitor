@@ -7,12 +7,12 @@ from flask import current_app, jsonify
 from app import db, scheduler
 from app.models import Provider
 from app.MailClient import Gmail as mc
-from app.Providers import Zayo, NTT, PacketFabric, EUNetworks, GTT
+from app.Providers import Zayo, NTT, PacketFabric, EUNetworks, GTT, Hibernia, Telstra
 
 import email
 
 
-PROVIDERS = [Zayo, NTT, PacketFabric, EUNetworks, GTT]
+PROVIDERS = [Zayo, NTT, PacketFabric, EUNetworks, GTT, Hibernia, Telstra]
 
 
 def get_client():
@@ -26,7 +26,7 @@ def get_client():
 def process_provider(client, mail, provider):
     '''
     retreive messages from the provider's "identified_by"
-    and process each one. 
+    and process each one.
     '''
     typ, messages = mail.search(None, provider.identified_by)
     length = len(messages[0].split())

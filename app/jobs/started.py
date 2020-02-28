@@ -32,6 +32,8 @@ def post_to_slack(email, maintenance, **kwargs):
     text += f'*Location*: {maintenance.location}\n'
     text += f'*Start*: {maintenance.start}, *End*: {maintenance.end} (*Timezone*: {maintenance.timezone})\n'
     username = 'janitor'
+    if not channel.startswith('#'):
+        channel = '#' + channel
 
     data_dict = {'channel': channel, 'text': text, 'username': username}
     #'icon_url' : icon_url}
