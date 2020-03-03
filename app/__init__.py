@@ -1,7 +1,6 @@
-import os
 import logging
+import os
 from logging.handlers import RotatingFileHandler
-
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_moment import Moment
@@ -19,10 +18,13 @@ from prometheus_client import multiprocess, make_wsgi_app, CollectorRegistry
 try:
     import sentry_sdk
     from sentry_sdk.integrations.flask import FlaskIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
     HAS_SENTRY = True
 except ImportError:
     HAS_SENTRY = False
+
+
 
 db = SQLAlchemy()
 moment = Moment()
@@ -33,27 +35,24 @@ documents = UploadSet('documents', DOCUMENTS)
 scheduler = APScheduler()
 registry = CollectorRegistry()
 
-
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
 if HAS_SENTRY and SENTRY_DSN:
-    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[FlaskIntegration()])
-
+    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[FlaskIntegration(), SqlalchemyIntegration()])
 
 def process_startup():
     process()
-
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     JOBS = [
-        {
-            'id': 'run_loop',
-            'func': process_startup,
-            'trigger': 'interval',
-            'replace_existing': True,
-            'seconds': int(app.config['CHECK_INTERVAL']),
-        }
+         {
+             'id': 'run_loop',
+             'func': process_startup,
+             'trigger': 'interval',
+             'replace_existing': True,
+             'seconds': int(app.config['CHECK_INTERVAL'])
+         }
     ]
     app.config['JOBS'] = JOBS
 
@@ -78,7 +77,6 @@ def create_app(config_class=Config):
             os.remove(os.path.join(metrics_dir, f))
 
 
-
     db.init_app(app)
     moment.init_app(app)
     migrate.init_app(app, db)
@@ -87,59 +85,51 @@ def create_app(config_class=Config):
     scheduler.init_app(app)
     scheduler.start()
 
-    from app.errors import bp as errors_bp
 
+    from app.errors import bp as errors_bp
     app.register_blueprint(errors_bp)
 
     from app.main import bp as main_bp
-
     app.register_blueprint(main_bp)
 
     configure_uploads(app, documents)
 
+
     connexion_register_blueprint(app, 'api/v1/swagger/main.yaml')
 
-    log_level = {
-        'debug': logging.DEBUG,
-        'info': logging.INFO,
-        'warning': logging.WARNING,
-        'error': logging.ERROR,
-        'critical': logging.CRITICAL,
-    }
-
     if not app.debug and not app.testing:
-        file_handler = RotatingFileHandler(
-            app.config['LOGFILE'], maxBytes=20480, backupCount=10
-        )
-        file_handler.setFormatter(
-            logging.Formatter(
-                '%(asctime)s %(levelname)s: %(message)s ' '[in %(pathname)s:%(lineno)d]'
-            )
-        )
-        file_handler.setLevel(log_level[app.config['LOG_LEVEL']])
+
+        log_level = {
+                     'debug': logging.DEBUG,
+                     'info': logging.INFO,
+                     'warning': logging.WARNING,
+                     'error': logging.ERROR,
+                     'critical': logging.CRITICAL,
+                 }
+
+        file_handler = RotatingFileHandler(app.config['LOGFILE'],
+                                           maxBytes=20480, backupCount=10)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s '
+            '[in %(pathname)s:%(lineno)d]'))
+        file_handler.setLevel(logging.INFO)
         app.logger.addHandler(file_handler)
 
-        app.logger.setLevel(log_level[app.config['LOG_LEVEL']])
+        app.logger.setLevel(log_level[app.config['LOG_LEVEL'].lower()])
         app.logger.info('janitor app started')
 
     multiprocess.MultiProcessCollector(registry)
 
     app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
-        '/metrics': make_wsgi_app(registry)
-    })
-
+        '/metrics': make_wsgi_app(registry)})
 
     return app
 
-
 def connexion_register_blueprint(app, swagger_file, **kwargs):
     options = {"swagger_ui": True}
-    con = connexion.FlaskApp(
-        "api/v1",
-        app.instance_path,  # /v1/swagger
-        specification_dir='api/v1/swagger',
-        options=options,
-    )
+    con = connexion.FlaskApp("api/v1", app.instance_path, #/v1/swagger
+                             specification_dir='api/v1/swagger',
+                             options=options)
     specification = 'main.yaml'
     api = super(connexion.FlaskApp, con).add_api(specification, **kwargs)
     app.register_blueprint(api.blueprint)

@@ -1,7 +1,0 @@
-version: '2.1'
-
-services:
-  adminer:
-    image: adminer
-    ports:
-      - 8090:8080

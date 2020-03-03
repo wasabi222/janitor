@@ -6,3 +6,5 @@ venv/
 .venv/
 htmlcov/
 app.db
+app/static/circuits/*
+.pytest_cache

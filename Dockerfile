@@ -1,15 +1,21 @@
-FROM python:3.6-slim-stretch
+FROM python:3.7.6-slim-stretch as builder
 
-COPY ./ /opt/janitor/
-COPY ./docker/init.sh /var/run/init.sh
+RUN apt-get update && apt-get install -y build-essential libpq-dev libmariadbclient-dev curl
 
-RUN apt-get update \
- && apt-get install -y gcc libmariadbclient-dev libpq-dev \
- && apt-get autoremove -y \
- && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
- && pip --no-cache install gunicorn \
- && pip --no-cache install -r /opt/janitor/requirements.txt
+ADD ./ /opt/janitor/
+
+COPY ./docker/init.sh /tmp/init.sh
+
+COPY ./docker/requirements.txt /tmp/requirements.txt
+
+RUN pip3 install --upgrade setuptools
+
+RUN pip3 install -r /tmp/requirements.txt && pip3 --no-cache install gunicorn && pip3 --no-cache install psycopg2
 
 EXPOSE 8000
 
-ENTRYPOINT /var/run/init.sh
+WORKDIR /opt/janitor
+
+ENTRYPOINT ["sh", "/tmp/init.sh"]
+
+CMD ["uwsgi", "--http", ":8000", "--mount", "/myapplication=janitor:app", "--enable-threads", "--processes", "5"]
