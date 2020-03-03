@@ -10,6 +10,18 @@ Janitor connects to an email server on a user-specified interval and checks for 
 # Demo
 ![demo](docs/demo.gif)
 
+# Requirements
+A gmail account with an [app password](https://support.google.com/accounts/answer/185833) is required to parse messages.
+
+# Quickstart
+
+```
+git clone https://github.com/wasabi222/janitor.git
+cd janitor/docker-compose
+[edit janitor.env to provide correct values to MAIL_SERVER, MAIL_USERNAME, and MAIL_PASSWORD]
+docker-compose up
+```
+
 # Components
 
 ## Mail Clients
