@@ -18,9 +18,12 @@ A gmail account with an [app password](https://support.google.com/accounts/answe
 ```
 git clone https://github.com/wasabi222/janitor.git
 cd janitor/docker-compose
-[edit janitor.env to provide correct values to MAIL_SERVER, MAIL_USERNAME, and MAIL_PASSWORD]
+[edit janitor.env to provide correct values to MAIL_SERVER, MAIL_USERNAME, and MAIL_PASSWORD and adjust other values as needed]
 docker-compose up
 ```
+janitor will be reachable at https://localhost - all http traffic to https using an included snakeoil cert. 
+
+The database won't populate with providers until either the first CHECK_INTERVAL has passed, or you press the "process messages" button. If the providers tab still isn't populated, verify your email/app password are correct.
 
 # Components
 
@@ -52,14 +55,17 @@ Maximum size for circuit contract file uploads. default: 32 Mib
 ### LOGFILE
 Location of the file that logs are written to. default: /var/log/janitor.log
 
+### LOG_LEVEL
+debug/info/warning/error/critical default: INFO
+
 ### CHECK_INTERVAL
-How frequently the mail server is checked for new messages. default: 10 minutes
+How frequently the mail server is checked for new messages (in seconds). default: 10 minutes
 
 ### POSTS_PER_PAGE
 The number of maintenances/circuits/providers to display on a single page. default: 20
 
 ### DATABASE_URL
-The location of the database. all databases supported by sqlalchemy are supported. default: current working directory + app.db
+The location of the database. all databases supported by sqlalchemy are supported. default: current working directory + app.db (sqlite)
 
 ### TZ_PREFIX
 For correctly modifying timezones. Some providers send maintenances with a timezone of "Eastern" instead of "US/Eastern" which breaks python datetime. You could set the TZ_PREFIX value to "US/" to fix this issue. default: None
@@ -77,7 +83,7 @@ imap address of your mail server
 The name of the mailbox to process messages from. default: INBOX
 
 ### MAIL_CLIENT
-The mail client you wish to use. currently only gmail is supported. This is required.
+The mail client you wish to use. currently only gmail is supported.
 
 ### SLACK_WEBHOOK_URL
 If you wish to send messages to slack, you can define this. default: None
@@ -87,6 +93,9 @@ The channel to post slack messages to. default: None
 
 ### PROMETHEUS_DIR
 The directory to store multiprocess prometheus metrics. default: /tmp/janitor_prometheus 
+
+### SENTRY_DSN
+Optional Sentry DSN for easier debugging
 
 
 # database schema
