@@ -1,14 +1,8 @@
-#!/bin/bash
+export PATH=/home/janitor/.local/bin:$PATH
+export FLASK_APP=janitor.py
+while ! flask db migrate && flask db upgrade 2>&1; do
+		echo "waiting on db..."
+		sleep 5
+done
 
-set -e
-
-cd /opt/janitor
-
-if [ "$INIT_DB" == true ]; then
-    echo "Initialising the database..."
-    flask db init
-    flask db migrate
-    flask db upgrade
-fi
-
-/usr/local/bin/gunicorn -b localhost:8000 -w 4 janitor:app --preload
+exec ${@}
