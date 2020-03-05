@@ -102,7 +102,7 @@ class StandardProvider(Provider):
     def identified_by(self):
         pass
 
-
+    
     def add_circuit(self, cid):
         '''
         add a circuit to the db if it doesn't already exist
@@ -216,6 +216,9 @@ class StandardProvider(Provider):
         if not maint:
             return False
 
+        if maint.started:
+            return True
+
         maint.started = 1
 
         self.add_and_commit(maint)
@@ -242,7 +245,7 @@ class StandardProvider(Provider):
         maint = Maintenance.query.filter_by(
             provider_maintenance_id=cal['X-MAINTNOTE-MAINTENANCE-ID'],
             rescheduled=0).first()
-
+        
         if not maint:
             return False
 
@@ -280,7 +283,7 @@ class StandardProvider(Provider):
 
         return True
 
-
+    
     def process(self, email):
 
         current_app.logger.info(f'attempting to process email {email["Subject"]}')
@@ -301,7 +304,7 @@ class StandardProvider(Provider):
                             msg = subpart.get_payload()
                             msg = icalendar.Calendar.from_ical(msg)
                         break
-
+        
         if not msg:
             return False
 
@@ -357,6 +360,7 @@ class NTT(StandardProvider):
 
     @property
     def identified_by(self):
+        #return b'(FROM "NTT Communications" UNSEEN)'
         return b'(SUBJECT NTT UNSEEN)'
 
 
@@ -392,12 +396,12 @@ class EUNetworks(StandardProvider):
 
 class Zayo(Provider):
     '''
-    zayo seems to use salesforce and mostly uses templates
+    zayo seems to use salesforce and mostly uses templates 
     '''
     def __init__(self):
         super().__init__()
         self.name = 'zayo'
-        self.type = 'transit'
+        self.type = 'backbone'
         self.email_esc = 'mr@zayo.com'
         if not Pro.query.filter_by(name=self.name, type=self.type).first():
             p = Pro(name=self.name, type=self.type, email_esc=self.email_esc)
@@ -432,7 +436,7 @@ class Zayo(Provider):
         db.session.commit()
 
 
-
+    
     def get_maintenance(self, soup):
         '''
         for pulling the id out and returning the maintenance row
@@ -460,6 +464,9 @@ class Zayo(Provider):
         if not maint:
             return False
 
+        if maint.started:
+            return True
+
         maint.started = 1
 
         IN_PROGRESS.labels(provider=self.name).inc()
@@ -474,7 +481,7 @@ class Zayo(Provider):
 
         return True
 
-
+    
     def add_end_maint(self, soup, email):
 
         current_app.logger.info(f'attempting to mark end maintenance')
@@ -493,7 +500,7 @@ class Zayo(Provider):
 
         else:
             IN_PROGRESS.labels(provider=self.name).dec()
-
+            
             current_app.logger.info(f'maintenance {maint.provider_maintenance_id} decremented in prometheus but not ended')
 
         for func in ended_funcs:
@@ -529,7 +536,7 @@ class Zayo(Provider):
         '''
 
         current_app.logger.info(f'attempting to mark maintenance rescheduled')
-
+        
         old_maint = self.get_maintenance(soup)
 
         if not old_maint:
@@ -565,7 +572,7 @@ class Zayo(Provider):
         '''
 
         current_app.logger.info(f'attempting to add new maint from email {email["Subject"]}')
-
+        
         table = soup.find('table')
         if not table:
             subject = email['Subject']
@@ -843,7 +850,7 @@ class GTT(Provider):
                 circuit_row = Circuit.query.filter_by(provider_cid=cid).first()
                 maint_row = Maintenance.query.filter_by(
                 provider_maintenance_id=maint.provider_maintenance_id, rescheduled=0).first()
-
+                
                 mc = MaintCircuit(impact=impact, date=start_dt.date())
                 circuit_row.maintenances.append(mc)
                 mc.maint_id = maint_row.id
@@ -905,7 +912,7 @@ class GTT(Provider):
 
         if not update_text:
             for payload in email.get_payload():
-                update_text = payload.get_payload()
+                update_text = payload.get_payload() 
 
         u = MaintUpdate(maintenance_id=maint.id, comment=soup.text,
             updated=datetime.datetime.now())
@@ -922,7 +929,7 @@ class GTT(Provider):
         for part in email.walk():
             if part.get_content_type() == 'text/html':
                 msg = part.get_payload()
-
+                
                 if 'GTT' in msg:
                     # this does not need to be decoded
                     break
@@ -941,7 +948,7 @@ class GTT(Provider):
 
         elif 'work conclusion' in email['Subject'].lower():
             result = self.add_end_maint(soup, email)
-
+            
         elif 'work cancellation' in email['Subject'].lower():
             result = self.add_cancelled_maint(soup, email)
 
@@ -951,9 +958,9 @@ class GTT(Provider):
         return result
 
 
-class Hibernia(GTT):
+class GTTalt(GTT):
     '''
-    same provider, different email
+    GTT
     '''
 
     @property
@@ -1049,7 +1056,7 @@ class Telia(Provider):
             circuit_row = Circuit.query.filter_by(provider_cid=cid).first()
             maint_row = Maintenance.query.filter_by(
                 provider_maintenance_id=maint.provider_maintenance_id, rescheduled=0).first()
-
+            
             mc = MaintCircuit(impact=impact, date=start_dt.date())
             circuit_row.maintenances.append(mc)
             mc.maint_id = maint_row.id
@@ -1075,6 +1082,9 @@ class Telia(Provider):
 
         if not maint:
             return False
+
+        if maint.started:
+            return True
 
         maint.started = 1
 
@@ -1225,6 +1235,9 @@ class Telstra(Provider):
         if not maint:
             return False
 
+        if maint.started:
+            return True
+
         maint.started = 1
 
         self.add_and_commit(maint)
@@ -1301,7 +1314,7 @@ class Telstra(Provider):
 
             elif 'service(s) impacted' in self.clean_line(column.text.lower()):
                 cid = self.clean_line(column.next_sibling.next_sibling.text)
-
+            
             elif 'maintenance window' in self.clean_line(column.text.lower()):
                 date = self.clean_line(column.next_sibling.next_sibling.text)
 
@@ -1412,7 +1425,7 @@ class Telstra(Provider):
             elif 'completed successfully' in email['Subject'].lower():
                 result = self.add_end_maint(soup, email)
 
-            elif ('did not proceed' in email['Subject'].lower() or
+            elif ('did not proceed' in email['Subject'].lower() or 
                   'reschedule' in email['Subject'].lower()):
                 result = self.add_cancelled_maint(soup, email)
 
