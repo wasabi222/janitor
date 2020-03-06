@@ -1,19 +1,99 @@
 '''
 emails are processed from this module
+maintenances are marked started and ended from this module
 '''
 
 from flask import current_app, jsonify
 
 from app import db, scheduler
-from app.models import Provider
+from app.models import Provider, Maintenance, MaintCircuit
 from app.MailClient import Gmail as mc
-from app.Providers import Zayo, NTT, PacketFabric, EUNetworks, GTT, Hibernia, Telstra
+from app.Providers import Zayo, NTT, PacketFabric, EUNetworks, GTT, GTTalt, Telia, Telstra, IN_PROGRESS
+
+from api.v1.maintenances import starting_soon, ending_soon
+from app.jobs.started import FUNCS as start_funcs
+from app.jobs.ended import FUNCS as end_funcs
 
 import email
+from datetime import datetime, timedelta
+import pytz
+
+PROVIDERS = [Zayo, NTT, PacketFabric, EUNetworks, GTT, GTTalt, Telia, Telstra]
 
 
-PROVIDERS = [Zayo, NTT, PacketFabric, EUNetworks, GTT, Hibernia, Telstra]
+def mark_started():
+    '''
+    a job to mark upcoming maintenances that are starting soon
+    as started.
+    '''
+    with scheduler.app.app_context():
+        upcoming_maints = starting_soon()
 
+        for maint in upcoming_maints:
+            m = Maintenance.query.get(maint['id'])
+            m.started = 1
+
+            mc = MaintCircuit.query.get(maint['circuits'][0]['id'])
+
+            scheduler.app.logger.info(f'trying to mark {m.provider_maintenance_id} started via the api')
+
+            db.session.add(m)
+            db.session.commit()
+
+            scheduler.app.logger.info(f'{m.provider_maintenance_id} marked started via the api')
+
+            IN_PROGRESS.labels(provider=m.provider.name).inc()
+
+            for func in start_funcs:
+                func(email=None, maintenance=m)
+
+
+def mark_ended():
+    '''
+    a job to mark upcoming maintenances that are ending soon
+    as ended. it checks to make sure the last maintenance window
+    hasn't passed before marking it ended, and that there are no
+    updates saying it has been extended
+    '''
+    now = datetime.now(tz=pytz.utc)
+
+    with scheduler.app.app_context():
+        upcoming_maints = ending_soon()
+
+        for maint in upcoming_maints:
+            m = Maintenance.query.get(maint['id'])
+
+            mc = MaintCircuit.query.get(maint['circuits'][0]['id'])
+
+            # we need to loop through each maintcircuit to verify
+            # this is the last day for this maintenance
+
+            for maintcircuit in m.circuits:
+                if now.date() < maintcircuit.date:
+                    scheduler.app.logger.info(f'{m.provider_maintenance_id} is continuing at a later date. Not marking ended.')
+                    return
+
+            # next we make sure the maintenance hasn't been extended
+
+            for update in m.updates.all():
+                if 'extended' in update.comment or 'extension' in update.comment:
+                    # this means that a maint complete email must be sent
+                    # in order for this maint to be marked as ended
+                    return
+
+            scheduler.app.logger.info(f'trying to mark {m.provider_maintenance_id} ended via the api')
+
+            m.ended = 1
+
+            db.session.add(m)
+            db.session.commit()
+
+            scheduler.app.logger.info(f'{m.provider_maintenance_id} marked ended via the api')
+
+            IN_PROGRESS.labels(provider=m.provider.name).dec()
+
+            for func in end_funcs:
+                func(email=None, maintenance=m)
 
 def get_client():
     server = current_app.config['MAIL_SERVER']
@@ -23,10 +103,11 @@ def get_client():
     return client
 
 
+
 def process_provider(client, mail, provider):
     '''
     retreive messages from the provider's "identified_by"
-    and process each one.
+    and process each one. 
     '''
     typ, messages = mail.search(None, provider.identified_by)
     length = len(messages[0].split())
@@ -82,4 +163,7 @@ def process():
             p = provider()
             process_provider(client, mail, p)
 
+
         client.close_session()
+
+
