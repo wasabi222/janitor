@@ -64,6 +64,9 @@ def mark_ended():
         for maint in upcoming_maints:
             m = Maintenance.query.get(maint['id'])
 
+            if not m.started:
+                continue
+
             mc = MaintCircuit.query.get(maint['circuits'][0]['id'])
 
             # we need to loop through each maintcircuit to verify

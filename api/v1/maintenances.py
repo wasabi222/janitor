@@ -98,12 +98,21 @@ def ending_soon(minutes=5):
         if maint.maintenance.ended:
             continue
 
+        # skip maintenances that have not yet started
+        if not maint.maintenance.started:
+            continue
+
         end = datetime.combine(
             maint.date,
             maint.maintenance.end,
             pytz.timezone(maint.maintenance.timezone),
             )
         end_utc = end.astimezone(pytz.utc)
+
+        # if end time is before start time, we assume this
+        # goes into the next day, and need to account for that
+        if maint.maintenance.start > maint.maintenance.end:
+            end_utc = end_utc + timedelta(days=1)
 
         if end_utc < (now + timedelta(minutes=minutes)):
             ending_soon.append(maint)
