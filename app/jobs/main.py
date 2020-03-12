@@ -42,9 +42,10 @@ def mark_started():
 
             scheduler.app.logger.info(f'{m.provider_maintenance_id} marked started via the api')
 
-            IN_PROGRESS.labels(provider=m.provider.name).inc()
+            IN_PROGRESS.labels(provider=mc.circuit.provider.name).inc()
 
             for func in start_funcs:
+                scheduler.app.logger.info(f'calling {func} for {m.provider_maintenance_id} due to job')
                 func(email=None, maintenance=m)
 
 
@@ -90,9 +91,10 @@ def mark_ended():
 
             scheduler.app.logger.info(f'{m.provider_maintenance_id} marked ended via the api')
 
-            IN_PROGRESS.labels(provider=m.provider.name).dec()
+            IN_PROGRESS.labels(provider=mc.circuit.provider.name).dec()
 
             for func in end_funcs:
+                scheduler.app.logger.info(f'calling function {func.__name__} for {m.provider_maintenance_id} due to job')
                 func(email=None, maintenance=m)
 
 def get_client():
