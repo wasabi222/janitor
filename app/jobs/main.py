@@ -8,7 +8,7 @@ from flask import current_app, jsonify
 from app import db, scheduler
 from app.models import Provider, Maintenance, MaintCircuit
 from app.MailClient import Gmail as mc
-from app.Providers import Zayo, NTT, PacketFabric, EUNetworks, GTT, GTTalt, Telia, Telstra, IN_PROGRESS
+from app.Providers import Zayo, NTT, PacketFabric, EUNetworks, GTT, Hibernia, Telia, Telstra, IN_PROGRESS
 
 from api.v1.maintenances import starting_soon, ending_soon
 from app.jobs.started import FUNCS as start_funcs
@@ -18,7 +18,7 @@ import email
 from datetime import datetime, timedelta
 import pytz
 
-PROVIDERS = [Zayo, NTT, PacketFabric, EUNetworks, GTT, GTTalt, Telia, Telstra]
+PROVIDERS = [Zayo, NTT, PacketFabric, EUNetworks, GTT, Hibernia, Telia, Telstra]
 
 
 def mark_started():
