@@ -958,9 +958,9 @@ class GTT(Provider):
         return result
 
 
-class GTTalt(GTT):
+class Hibernia(GTT):
     '''
-    GTT
+    same provider, different email
     '''
 
     @property
