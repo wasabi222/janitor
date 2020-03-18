@@ -42,6 +42,13 @@ if HAS_SENTRY and SENTRY_DSN:
 def process_startup():
     process()
 
+def start_maint():
+    mark_started()
+
+def end_maint():
+    mark_ended()
+
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -52,6 +59,20 @@ def create_app(config_class=Config):
              'trigger': 'interval',
              'replace_existing': True,
              'seconds': int(app.config['CHECK_INTERVAL'])
+         },
+         {
+             'id': 'watch_started',
+             'func': start_maint,
+             'trigger': 'interval',
+             'replace_existing': True,
+             'seconds': int(280)
+         },
+         {
+             'id': 'watch_ended',
+             'func': end_maint,
+             'trigger': 'interval',
+             'replace_existing': True,
+             'seconds': int(280)
          }
     ]
     app.config['JOBS'] = JOBS
@@ -137,4 +158,4 @@ def connexion_register_blueprint(app, swagger_file, **kwargs):
 
 
 from app import models
-from app.jobs.main import process
+from app.jobs.main import process, mark_started, mark_ended
