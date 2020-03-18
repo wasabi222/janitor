@@ -401,7 +401,7 @@ class Zayo(Provider):
     def __init__(self):
         super().__init__()
         self.name = 'zayo'
-        self.type = 'backbone'
+        self.type = 'transit'
         self.email_esc = 'mr@zayo.com'
         if not Pro.query.filter_by(name=self.name, type=self.type).first():
             p = Pro(name=self.name, type=self.type, email_esc=self.email_esc)
