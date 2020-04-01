@@ -317,6 +317,59 @@ paths:
                       date:
                         type: string
                         description: date of maintenance
+  /maintenances/in_progress:
+    get:
+      operationId: "api.v1.maintenances.in_progress"
+      tags:
+        - "Maintenances"
+      summary: "Get all maintenances in progress"
+      description: "GET all maintenances in progress"
+      responses:
+        200:
+          description: "Successful read maint list operation"
+          schema:
+            type: "array"
+            items:
+              properties:
+                id:
+                  type: "integer"
+                provider_maintenance_id:
+                  type: "string"
+                start:
+                  type: "string"
+                end:
+                  type: "string"
+                timezone:
+                  type: "string"
+                cancelled:
+                  type: "boolean"
+                rescheduled:
+                  type: "boolean"
+                rescheduled_id:
+                  type: "integer"
+                location:
+                  type: "string"
+                reason:
+                  type: "string"
+                received_dt:
+                  type: "string"
+                started:
+                  type: "boolean"
+                ended:
+                  type: "boolean"
+                circuits:
+                  type: array
+                  items:
+                    properties:
+                      circuit_id:
+                        type: integer
+                        description: Id of the circuit
+                      impact:
+                        type: string
+                        description: impact of the maintenace for this circuit
+                      date:
+                        type: string
+                        description: date of maintenance
   /maintenances/{maintenance_id}:
     get:
       operationId: 'api.v1.maintenances.read_one'
@@ -333,6 +386,126 @@ paths:
       responses:
         200:
           description: "Successful read maint list operation"
+          schema:
+            type: "array"
+            items:
+              properties:
+                id:
+                  type: "integer"
+                provider_maintenance_id:
+                  type: "string"
+                start:
+                  type: "string"
+                end:
+                  type: "string"
+                timezone:
+                  type: "string"
+                cancelled:
+                  type: "boolean"
+                rescheduled:
+                  type: "boolean"
+                rescheduled_id:
+                  type: "integer"
+                location:
+                  type: "string"
+                reason:
+                  type: "string"
+                received_dt:
+                  type: "string"
+                started:
+                  type: "boolean"
+                ended:
+                  type: "boolean"
+                circuits:
+                  type: array
+                  items:
+                    properties:
+                      circuit_id:
+                        type: integer
+                        description: Id of the circuit
+                      impact:
+                        type: string
+                        description: impact of the maintenace for this circuit
+                      date:
+                        type: string
+                        description: date of maintenance
+  /maintenances/starting_soon:
+    get:
+      operationId: "api.v1.maintenances.starting_soon"
+      tags:
+        - "Maintenances"
+      summary: "Get maintenances that are starting soon"
+      description: "GET all upcoming maintenances in the next X minutes"
+      parameters:
+        - name: minutes
+          in: query
+          description: number of minutes to look forward from now
+          type: integer
+          required: False
+          default: 5
+      responses:
+        200:
+          description: "Successful read maint list operation"
+          schema:
+            type: "array"
+            items:
+              properties:
+                id:
+                  type: "integer"
+                provider_maintenance_id:
+                  type: "string"
+                start:
+                  type: "string"
+                end:
+                  type: "string"
+                timezone:
+                  type: "string"
+                cancelled:
+                  type: "boolean"
+                rescheduled:
+                  type: "boolean"
+                rescheduled_id:
+                  type: "integer"
+                location:
+                  type: "string"
+                reason:
+                  type: "string"
+                received_dt:
+                  type: "string"
+                started:
+                  type: "boolean"
+                ended:
+                  type: "boolean"
+                circuits:
+                  type: array
+                  items:
+                    properties:
+                      circuit_id:
+                        type: integer
+                        description: Id of the circuit
+                      impact:
+                        type: string
+                        description: impact of the maintenace for this circuit
+                      date:
+                        type: string
+                        description: date of maintenance
+  /maintenances/ending_soon:
+    get:
+      operationId: "api.v1.maintenances.ending_soon"
+      tags:
+        - "Maintenances"
+      summary: "Get maintenances that are ending soon"
+      description: "GET all ending maintenances in the next X minutes"
+      parameters:
+        - name: minutes
+          in: query
+          description: number of minutes to look forward from now
+          type: integer
+          required: False
+          default: 5
+      responses:
+        200:
+          description: "Successful operation"
           schema:
             type: "array"
             items:
