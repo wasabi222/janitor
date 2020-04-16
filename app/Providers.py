@@ -15,6 +15,7 @@ import pytz
 import dateutil.parser as parser
 import time
 from prometheus_client import Counter, Gauge
+import quopri
 
 from app.models import Maintenance, Circuit, MaintCircuit, MaintUpdate
 from app.models import Provider as Pro # don't conflict with the class below
@@ -941,7 +942,7 @@ class GTT(Provider):
         if not msg:
             return False
 
-        soup = bs4.BeautifulSoup(msg, features="lxml")
+        soup = bs4.BeautifulSoup(quopri.decodestring(msg), features="lxml")
 
         if 'work announcement' in email['Subject'].lower():
             result = self.add_new_maint(soup, email)
