@@ -1313,7 +1313,15 @@ class Telstra(Provider):
                 impact = self.clean_line(column.next_sibling.next_sibling.text)
 
             elif 'service(s) impacted' in self.clean_line(column.text.lower()):
-                cid = self.clean_line(column.next_sibling.next_sibling.text)
+                try:
+                   tmp = self.clean_line(column.next_sibling.next_sibling.text)
+                except:
+                    tmp = self.clean_line(column.next_sibling.text)
+                if '<' in tmp and '>' in tmp:
+                    cid_soup = bs4.BeautifulSoup(tmp)
+                    cid = cid_soup.text
+                else:
+                    cid = tmp
             
             elif 'maintenance window' in self.clean_line(column.text.lower()):
                 date = self.clean_line(column.next_sibling.next_sibling.text)
@@ -1406,7 +1414,7 @@ class Telstra(Provider):
         if not msg:
             return False
 
-        soup = bs4.BeautifulSoup(msg.get_payload(), features="lxml")
+        soup = bs4.BeautifulSoup(self.clean_line(msg.get_payload()), features="lxml")
 
 
 
