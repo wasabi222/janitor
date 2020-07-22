@@ -30,7 +30,6 @@ services:
     image: 'janitor:0.2.0' # networkandrew/janitor:0.2.0
     init: true
     dns: 9.9.9.9
-    network_mode: "bridge"
     env_file: janitor.env
     healthcheck:
       test: ['CMD-SHELL', 'curl janitor:8000 || exit 1']
