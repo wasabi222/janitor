@@ -1440,3 +1440,252 @@ class Telstra(Provider):
 
 
         return result
+
+
+class Cogent(Provider):
+    '''
+    Cogent
+    '''
+    def __init__(self):
+        super().__init__()
+        self.name = 'cogent'
+        self.type = 'transit'
+        self.email_esc = 'Cogent-NoReply@cogentco.com'
+        if not Pro.query.filter_by(name=self.name, type=self.type).first():
+            p = Pro(name=self.name, type=self.type, email_esc=self.email_esc)
+            self.add_and_commit(p)
+
+    @property
+    def identified_by(self):
+        return b'(FROM "Cogent-NoReply@cogentco.com" UNSEEN)'
+
+    def add_and_commit(self, row):
+        row.provider_name = self.name
+        db.session.add(row)
+        db.session.commit()
+
+    def get_maint_id(self, email):
+        # match all 3 possible date strings so we can for sure
+        # match the ticket # in the second grouping
+        maint_re = re.search(
+            r'(\w+ \d+, \d+|\d+\/\d+\/\d+|\S+-\S+-\S+) (\S+-\S+) ((Emergency|Planned|Cancellation Planned) Network Maintenance|Maintenance Completed)',
+            email['Subject']
+        )
+        if not maint_re:
+            current_app.logger.info(f'Cogent failed subject: {email["Subject"]}')
+            return False
+
+        maint_id = maint_re.groups()[1]
+        current_app.logger.info(f'Cogent maint_id: {maint_id}')
+
+        return maint_id
+
+    def get_maint_date(self, line):
+        """Takes in a line containing a date in one of the many
+        formats that Cogent sends them in..
+        Returns a date object and TZ "name" where TZ "name" may be useless
+        """
+        tz_info = None
+        re_date = None
+        parsed = None
+        one_re = re.search(r'^(\d+|\d+:\d+) (\S+) ?(.* *) (\w+ \d+, \d+)', line)
+        two_re = re.search(r'^(\d+:\d+) (.*) (\d+-\w+-\d+)', line)
+        three_re = re.search(r'^(\d+:\d+ \w+) (.*) (\d+/\d+/\d+)$', line)
+        if one_re:
+            g_one = one_re.groups()
+            if g_one[1].lower() not in ['am', 'pm']:
+                tz_info = g_one[1]
+                re_date = ' '.join([g_one[0], g_one[-1]])
+            else:
+                tz_info = g_one[2]
+                re_date = ' '.join([g_one[0], g_one[1], g_one[-1]])
+        elif two_re:
+            g_two = two_re.groups()
+            tz_info = g_two[1]
+            re_date = ' '.join([g_two[0], g_two[-1]])
+        elif three_re:
+            g_three = three_re.groups()
+            tz_info = g_three[1]
+            re_date = ' '.join([g_three[0], g_three[-1]])
+
+        # if we have re_date, it should be parsable, hopefully
+        if re_date is not None:
+            try:
+                parsed = parser.parse(re_date)
+            except Exception as e:
+                pass
+
+        return (parsed, tz_info)
+
+    def add_new_maint(self, soup, email):
+        """Adds a new regular 'Planned Maintenance' to the db
+        Returns true on success
+        Also note, it adds circuits and location as required
+        """
+        maint_id = self.get_maint_id(email)
+        if not maint_id:
+            return False
+
+        # We want to check to see if we have a duplicate before proceeding
+        # Not sure why but I have duplicate emails so just in case of a re-send
+        maint_row = Maintenance.query.filter_by(
+            provider_maintenance_id=maint_id
+        ).first()
+        if maint_row:
+            current_app.logger.info(f'Cogent maint_id: {maint_id} already exists, skipping.')
+            return True
+
+        # so we must be new...
+        maint = Maintenance()
+        maint.provider_maintenance_id = maint_id
+        received = email['Received'].splitlines()[-1].strip()
+        subject = email['Subject']
+        maint.received_dt = parser.parse(received)
+        current_app.logger.info(f'Cogent starting')
+        # start regex searches
+        start_line_re = re.search(r'Start time: (.*)(\r|\n)', soup.text)
+        end_line_re = re.search(r'End time: (.*)(\r|\n)', soup.text)
+        circuit_ids_re = re.search(r'Order ID\(s\) impacted: (.*)(\r|\n)', soup.text)
+        location_re = re.search(
+            r'.*(Planned|Emergency) Network Maintenance - (.*) \d+.*',
+            subject
+        )
+        # just gets the first sentence of description
+        impact_re = re.search(r'Expected Outage\/Downtime: (.*)(\r|\n)', soup.text)
+
+        if not all((start_line_re, end_line_re, location_re, circuit_ids_re, impact_re)):
+            current_app.logger.info(f'Cogent Failed for {subject}')
+            raise ParsingError(
+                'Unable to parse the maintenance notification from EquinixBR: {}'.format(
+                    soup.text
+                )
+            )
+        current_app.logger.info(f'Cogent got all oure REs at least')
+        # parsed all the lines, keep going...
+        # regex groups pulled out
+        start_dt, start_tz_name = self.get_maint_date(start_line_re.groups()[0])
+        end_dt, end_tz_name = self.get_maint_date(end_line_re.groups()[0])
+
+        impact = impact_re.groups()[0]
+        maint.location = location_re.groups()[1]
+        maint.reason = soup.text.splitlines()[0]
+        # timing
+        maint.start = start_dt.time()
+        maint.end = end_dt.time()
+        maint.timezone = start_tz_name
+
+        current_app.logger.info(f'Cogent start TZ: {start_tz_name}')
+        self.add_and_commit(maint)
+
+        NEW_PARENT_MAINT.labels(provider=self.name).inc()
+
+        # get the circuit IDs
+        cids = set()
+        a_side = set()
+        for cid in circuit_ids_re.groups()[0].split(','):
+            cid = cid.strip()
+            cids.add(cid)
+            a_side.add(maint.location)
+
+        current_app.logger.info(f'Cogent cids: {cids}, a_sides: {a_side}')
+        if len(cids) == len(a_side):
+            for cid, a_side in zip(cids, a_side):
+                if not Circuit.query.filter_by(provider_cid=cid).first():
+                    circuit = Circuit()
+                    circuit.provider_cid = cid
+                    circuit.a_side = a_side
+                    this = Pro.query.filter_by(
+                        name=self.name,
+                        type=self.type
+                    ).first()
+                    circuit.provider_id = this.id
+                    self.add_and_commit(circuit)
+
+                circuit_row = Circuit.query.filter_by(provider_cid=cid).first()
+                maint_row = Maintenance.query.filter_by(
+                    provider_maintenance_id=maint.provider_maintenance_id,
+                    rescheduled=0
+                ).first()
+
+                mc = MaintCircuit(impact=impact, date=start_dt.date())
+                circuit_row.maintenances.append(mc)
+                mc.maint_id = maint_row.id
+                db.session.commit()
+                NEW_CID_MAINT.labels(cid=cid).inc()
+
+        # sync with adm4
+        sync_notices_na(email, maint.provider_maintenance_id, 'scheduled')
+
+        return True
+
+    def add_end_maint(self, soup, email):
+        maint_id = self.get_maint_id(email)
+        if not maint_id:
+            return False
+
+        maint = Maintenance.query.filter_by(
+            provider_maintenance_id=maint_id, rescheduled=0).first()
+        if not maint:
+            return False
+
+        maint.ended = 1
+
+        self.add_and_commit(maint)
+
+        return True
+
+    def add_cancelled_maint(self, soup, email):
+        maint_id = self.get_maint_id(email)
+        if not maint_id:
+            return False
+
+        maint = Maintenance.query.filter_by(
+            provider_maintenance_id=maint_id, rescheduled=0).first()
+        if not maint:
+            return False
+
+        maint.cancelled = 1
+
+        self.add_and_commit(maint)
+
+        return True
+
+    def process(self, email):
+        msg = None
+        result = False
+        current_app.logger.info(f'Cogent Subject: {email["Subject"]}')
+        for part in email.walk():
+            if part.get_content_type() in ['text/html', 'text/plain']:
+                msg = part.get_payload()
+
+                if 'Cogent' in msg:
+                    # this does not need to be decoded
+                    break
+                else:
+                    # this needs to be decoded
+                    msg = base64.b64decode(msg).decode()
+                    break
+
+        if not msg:
+            current_app.logger.info(f'Cogent NO MSG')
+            return False
+
+        soup = bs4.BeautifulSoup(quopri.decodestring(msg), features="lxml")
+
+        if 'Maintenance Completed' in email['Subject']:
+            result = self.add_end_maint(soup, email)
+
+        elif 'Cancellation Planned Network Maintenance' in email['Subject']:
+            # cancellations prepend the word so have to filter first
+            result = self.add_cancelled_maint(soup, email)
+
+        elif 'Planned Network Maintenance' in email['Subject']:
+            # NOTE cancellations are above here so we don't trigger on new
+            result = self.add_new_maint(soup, email)
+
+        elif 'Emergency Network Maintenance' in email['Subject']:
+            # similar to regular one but an emergency
+            result = self.add_new_maint(soup, email)
+
+
+        return result
