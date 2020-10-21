@@ -13,8 +13,8 @@ connexion
 flask-marshmallow==0.10.1
 flask_moment
 flask_apscheduler
-marshmallow-sqlalchemy
-marshmallow
+marshmallow-sqlalchemy==0.17.0
+marshmallow==2.19.5
 html5lib
 lxml
 pandas
