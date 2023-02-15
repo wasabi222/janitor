@@ -24,4 +24,4 @@ flask_bootstrap==3.3.7.1
 flask_uploads==0.2.1
 flask_wtf==0.14.2
 flask_migrate==2.5.2
-werkzeug==0.16.1
+werkzeug==2.2.3
